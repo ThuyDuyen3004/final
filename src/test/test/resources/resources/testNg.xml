@@ -1,0 +1,31 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="ParallelSuite" parallel="classes" thread-count="1">
+    <listeners>
+        <listener class-name="common.TestListener"/>
+    </listeners>
+    <test name="Run-Tests-Login">
+        <classes>
+            <class name="test.Login"/>
+        </classes>
+    </test>
+    <test name="Run-Tests-certification">
+        <classes>
+        <class name="test.Certification"/>
+        </classes>
+    </test>
+    <test name="Run-Tests- Students">
+        <classes>
+        <class name="test.Students"/>
+    </classes>
+    </test>
+    <test name="Run-Tests-TrainingProgram">
+        <classes>
+        <class name="test.TrainingProgram"/>
+        </classes>
+    </test>
+    <test name="Run-Tests-Regulation">
+        <classes>
+            <class name="test.Regulations"/>
+        </classes>
+    </test>
+</suite>

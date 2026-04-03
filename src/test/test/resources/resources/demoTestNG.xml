@@ -1,0 +1,31 @@
+<suite name="Suite All" parallel="tests" thread-count="2">
+    <test name="Test Chrome">
+        <parameter name="browser" value="chrome"/>
+        <classes>
+            <class name="test.Login"/>
+            <class name="test.Students"/>
+            <class name="test.TrainingProgram"/>
+            <class name="test.Certification"/>
+            <class name="test.Regulations"/>
+        </classes>
+    </test>
+
+    <test name="Test Edge">
+        <parameter name="browser" value="edge"/>
+        <class name="test.Login"/>
+        <class name="test.Students"/>
+        <class name="test.TrainingProgram"/>
+        <class name="test.Certification"/>
+        <class name="test.Regulations"/>
+    </test>
+
+    <test name="Test Firefox">
+        <parameter name="browser" value="firefox"/>
+        <class name="test.Login"/>
+        <class name="test.Students"/>
+        <class name="test.TrainingProgram"/>
+        <class name="test.Certification"/>
+        <class name="test.Regulations"/>
+    </test>
+
+</suite>
