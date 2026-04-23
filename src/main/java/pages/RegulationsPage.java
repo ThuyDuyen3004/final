@@ -4,6 +4,7 @@ import models.Setting.RegulationCondition;
 import models.Setting.RegulationDetail;
 import models.Setting.RegulationItem;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
@@ -56,8 +57,8 @@ public class RegulationsPage extends BasePage {
     private final By deleteButton =
             By.xpath("//div[.=' Xóa']");
 
-    private final By UpdateIcon =
-            By.xpath("//div[.='Sửa']");
+    private final By updateIcon =
+            By.xpath("//div[.=' Sửa']");
 
     private final By yesOption =
             By.xpath("//button[.='Có']");
@@ -65,7 +66,6 @@ public class RegulationsPage extends BasePage {
     /* ================= ADD ================= */
 
     public void addRegulation(String name,
-                              String totalCredits,
                               String requiredCredits,
                               String electiveCredits,
                               String gpa,
@@ -78,7 +78,6 @@ public class RegulationsPage extends BasePage {
         Thread.sleep(1000);
 
         wait.until(ExpectedConditions.visibilityOfElementLocated(regulationName)).sendKeys(name);
-        driver.findElement(minCreditsTotal).sendKeys(totalCredits);
         driver.findElement(minRequiredCredits).sendKeys(requiredCredits);
         driver.findElement(minElectiveCredits).sendKeys(electiveCredits);
         driver.findElement(minGPA).sendKeys(gpa);
@@ -220,7 +219,6 @@ public class RegulationsPage extends BasePage {
         return list;
     }
     public void fillToGpaAndSave(String name,
-                                 String totalCredits,
                                  String requiredCredits,
                                  String electiveCredits,
                                  String gpa) throws InterruptedException {
@@ -231,7 +229,6 @@ public class RegulationsPage extends BasePage {
         Thread.sleep(1000);
 
         wait.until(ExpectedConditions.visibilityOfElementLocated(regulationName)).sendKeys(name);
-        driver.findElement(minCreditsTotal).sendKeys(totalCredits);
         driver.findElement(minRequiredCredits).sendKeys(requiredCredits);
         driver.findElement(minElectiveCredits).sendKeys(electiveCredits);
         driver.findElement(minGPA).sendKeys(gpa);
@@ -240,19 +237,28 @@ public class RegulationsPage extends BasePage {
 
         wait.until(ExpectedConditions.elementToBeClickable(saveButton)).click();
     }
-    public String randomClickIconAndDeleteRegulation() {
+    public String deleteRegulationByName(String regulationName) {
 
         List<WebElement> rows = wait.until(
                 ExpectedConditions.visibilityOfAllElementsLocatedBy(tableRows)
         );
 
-        WebElement row = rows.get(new Random().nextInt(rows.size()));
+        WebElement targetRow = null;
 
-        String deletedName = row.findElement(
-                By.xpath(".//td[" + getColumnIndex("TÊN QUY CHẾ") + "]")
-        ).getText().trim();
+        for (WebElement row : rows) {
 
-        WebElement dropdownIcon = row.findElement(
+            String name = row.findElement(
+                    By.xpath(".//td[" + getColumnIndex("TÊN QUY CHẾ") + "]")
+            ).getText().trim();
+
+            if (name.equalsIgnoreCase(regulationName)) {
+                targetRow = row;
+                break;
+            }
+        }
+
+
+        WebElement dropdownIcon = targetRow.findElement(
                 By.xpath(".//button[@data-slot='dropdown-menu-trigger']")
         );
 
@@ -263,7 +269,60 @@ public class RegulationsPage extends BasePage {
 
         wait.until(ExpectedConditions.elementToBeClickable(yesOption)).click();
 
-        return deletedName;
+        return regulationName;
+    }
+
+    public void openEditFormByName(String regulationName) {
+
+        List<WebElement> rows = wait.until(
+                ExpectedConditions.visibilityOfAllElementsLocatedBy(tableRows)
+        );
+
+        WebElement targetRow = null;
+
+        for (WebElement row : rows) {
+
+            String name = row.findElement(
+                    By.xpath(".//td[" + getColumnIndex("TÊN QUY CHẾ") + "]")
+            ).getText().trim();
+
+            if (name.equalsIgnoreCase(regulationName)) {
+                targetRow = row;
+                break;
+            }
+        }
+
+        if (targetRow == null) {
+            throw new RuntimeException("Không tìm thấy regulation: " + regulationName);
+        }
+
+        WebElement dropdownIcon = targetRow.findElement(
+                By.xpath(".//button[@data-slot='dropdown-menu-trigger']")
+        );
+
+        new Actions(driver).moveToElement(dropdownIcon).perform();
+        dropdownIcon.click();
+
+        wait.until(ExpectedConditions.elementToBeClickable(updateIcon)).click();
+    }
+    public void editRegulationName(String newName) {
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        // input tên quy chế trong form edit
+        WebElement nameInput = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(regulationName)
+        );
+
+        // clear an toàn hơn clear()
+        nameInput.sendKeys(Keys.CONTROL + "a");
+        nameInput.sendKeys(Keys.DELETE);
+
+        // nhập tên mới
+        nameInput.sendKeys(newName);
+
+        // click save
+        wait.until(ExpectedConditions.elementToBeClickable(saveButton)).click();
     }
     public RegulationItem getRandomRegulation() {
 
@@ -357,5 +416,29 @@ public class RegulationsPage extends BasePage {
     }
     public void refreshPage() {
         driver.navigate().refresh();
+    }
+    public void editRequiredCredits(String value) {
+        WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(minRequiredCredits));
+        input.sendKeys(Keys.CONTROL + "a");
+        input.sendKeys(Keys.DELETE);
+        input.sendKeys(value);
+        // click save
+        wait.until(ExpectedConditions.elementToBeClickable(saveButton)).click();
+    }
+    public void editElectiveCredits(String value) {
+        WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(minElectiveCredits));
+        input.sendKeys(Keys.CONTROL + "a");
+        input.sendKeys(Keys.DELETE);
+        input.sendKeys(value);
+        // click save
+        wait.until(ExpectedConditions.elementToBeClickable(saveButton)).click();
+    }
+    public void editGPA(String value) {
+        WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(minGPA));
+        input.sendKeys(Keys.CONTROL + "a");
+        input.sendKeys(Keys.DELETE);
+        input.sendKeys(value);
+        // click save
+        wait.until(ExpectedConditions.elementToBeClickable(saveButton)).click();
     }
 }

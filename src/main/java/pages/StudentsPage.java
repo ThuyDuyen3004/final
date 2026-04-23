@@ -244,7 +244,7 @@ public class StudentsPage extends BasePage {
         // mở dropdown lớp
         WebElement classDropdown = wait.until(
                 ExpectedConditions.elementToBeClickable(
-                        By.xpath("//button[.='Lớp']")
+                        By.xpath("//button[@role='combobox'][2]")
                 )
         );
 
@@ -382,7 +382,10 @@ public class StudentsPage extends BasePage {
             return false;
         }
     }
-
+    public void scrollToTop() {
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript("window.scrollTo(0, 0);");
+    }
     public String getStudentNameByMSSV(String mssv) {
 
         int nameColumn = getColumnIndex("HỌ VÀ TÊN");
@@ -443,5 +446,15 @@ public class StudentsPage extends BasePage {
 
     public String getImportErrorMessage() {
         return driver.findElement(importErrorMessage).getText();
+    }
+    private By studentRows = By.xpath("//table/tbody/tr/td[3]");
+    public List<String> getStudentNames() {
+        List<WebElement> elements = wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(studentRows));
+        List<String> names = new ArrayList<>();
+
+        for (WebElement e : elements) {
+            names.add(e.getText().trim());
+        }
+        return names;
     }
 }

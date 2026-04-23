@@ -334,11 +334,23 @@ public class TrainingProgramPage extends BasePage{
 
         for (int i = 1; i <= getTotalSubjects(); i++) {
 
-            String subjectCode = getSubjectCell(i, getSubjectColumnIndex("MÃ HỌC PHẦN")).getText().trim();
+            String subjectCode = getSubjectCell(i, getSubjectColumnIndex("MÃ HỌC PHẦN"))
+                    .getText().trim();
 
-            String subjectName = getSubjectCell(i, getSubjectColumnIndex("TÊN HỌC PHẦN")).getText().trim();
+            String subjectName = getSubjectCell(i, getSubjectColumnIndex("TÊN HỌC PHẦN"))
+                    .getText().trim();
 
-            String credit = getSubjectCell(i, getSubjectColumnIndex("SỐ TÍN CHỈ")).getText().trim();
+            // 🔥 FIX QUAN TRỌNG: lấy credit đúng cột
+            String requiredCredit = getSubjectCell(i, getSubjectColumnIndex("BẮT BUỘC"))
+                    .getText().trim();
+
+            String electiveCredit = getSubjectCell(i, getSubjectColumnIndex("TỰ CHỌN"))
+                    .getText().trim();
+
+            String credit = !requiredCredit.isEmpty() ? requiredCredit : electiveCredit;
+
+            // (optional) normalize nếu UI có "tín chỉ"
+            credit = credit.replaceAll("[^0-9]", "");
 
             subjects.add(new SubjectItem(subjectCode, subjectName, credit));
         }
@@ -388,16 +400,15 @@ public class TrainingProgramPage extends BasePage{
     private final By errorMessage = By.xpath("//p[@class='text-xs text-red-500']");
 
     public boolean isErrorMessageDisplayed(String expectedMessage) {
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
 
-        List<WebElement> errors = driver.findElements(errorMessage);
+            WebElement error = wait.until(ExpectedConditions.visibilityOfElementLocated(
+                    By.xpath("//*[contains(text(),'tồn tại trong chương trình đào tạo')]")
+            ));
 
-        for (WebElement error : errors) {
-            if (error.getText().trim().equals(expectedMessage)) {
-                return true;
-            }
-        }
+            String actual = error.getText().replaceAll("\\s+", " ").trim();
 
-        return false;
+            return actual.contains(expectedMessage);
     }
     public ArrayList<String> getAllSubjectCodes() {
 
@@ -473,13 +484,31 @@ public class TrainingProgramPage extends BasePage{
 
         return major;
     }
-    public String getNoDataMessage() {
-
-        By message = By.xpath("//td[contains(@class,'p-2 align-middle')]");
-
-        return wait.until(ExpectedConditions.visibilityOfElementLocated(message))
-                .getText()
-                .trim();
+    public void waitForSubjectVisible(String subjectName) {
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        wait.until(driver ->
+                driver.getPageSource().contains(subjectName)
+        );
     }
+    public String getNoDataMessage() {
+        WebElement message = driver.findElement(
+                By.xpath("//td[@data-slot='table-cell']")
+        );
+        return message.getText().trim();
+    }
+    public String getRandomChuyenNganh() {
+        List<WebElement> rows = driver.findElements(By.xpath("//tbody/tr"));
+
+        if (rows.isEmpty()) {
+            throw new RuntimeException("No data in table");
+        }
+
+        int randomRow = new Random().nextInt(rows.size()) + 1;
+
+        int columnIndex = getColumnIndex("CHUYÊN NGÀNH");
+
+        return getCell(randomRow, columnIndex).getText().trim();
+    }
+
 }
 

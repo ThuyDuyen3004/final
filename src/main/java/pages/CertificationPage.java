@@ -38,7 +38,7 @@ public class CertificationPage extends BasePage {
 
     // ===== CERTIFICATE =====
     private final By certificateDropdown =
-            By.xpath("//label[contains(text(),'Các loại chứng chỉ')]/following-sibling::div");
+            By.xpath("//button[.='Chọn chứng chỉ']");
 
     private final By certificateContainer =
             By.xpath("//div[@class='p-2 space-y-1']");
@@ -67,9 +67,6 @@ public class CertificationPage extends BasePage {
 
         List<WebElement> rows = driver.findElements(tableRows);
 
-        if (rows.isEmpty()) {
-            throw new RuntimeException("❌ Student table is empty");
-        }
 
         int index = new Random().nextInt(rows.size()) + 1;
 
@@ -132,10 +129,6 @@ public class CertificationPage extends BasePage {
             }
         }
 
-        if (valid.isEmpty()) {
-            throw new RuntimeException("❌ Không có student");
-        }
-
         String selected = valid.get(new Random().nextInt(valid.size()));
 
         System.out.println("👉 Selected student: " + selected);
@@ -195,28 +188,42 @@ public class CertificationPage extends BasePage {
 
     /* ================= ADD CERTIFICATION (PASS) ================= */
 
-    public CertificateItem addCertification() {
+    public void selectCertificateByName(String name) {
 
-        // 1. chọn student
+        // mở dropdown
+        driver.findElement(certificateDropdown).click();
+
+        // wait dropdown
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//*[contains(@role,'listbox')]")
+        ));
+
+        // chọn option
+        By option = By.xpath(String.format(
+                "//*[contains(@role,'option') and normalize-space()='%s']",
+                name
+        ));
+
+        WebElement el = wait.until(ExpectedConditions.elementToBeClickable(option));
+
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", el);
+    }
+    public CertificateItem addCertification(String certificateName) {
+
         String studentName = selectRandomStudent();
 
-        // 2. mở dropdown chứng chỉ
         WebElement dropdown = wait.until(ExpectedConditions.elementToBeClickable(certificateDropdown));
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", dropdown);
 
-        // 3. chọn chứng chỉ
-        selectRandomCertificates();
+        // 🔥 chọn theo text
+        selectCertificateByName(certificateName);
 
-        // 4. đóng dropdown (QUAN TRỌNG)
         driver.findElement(By.xpath("//body")).click();
 
-        // 5. save
         clickSave();
 
-        // 6. wait table
         wait.until(ExpectedConditions.visibilityOfElementLocated(tableRows));
 
-        // 7. scroll
         scrollToStudent(studentName);
 
         return getCertificateByStudent(studentName);
@@ -224,18 +231,22 @@ public class CertificationPage extends BasePage {
 
     /* ================= ADD CERTIFICATION (NO STUDENT) ================= */
 
-    public void addCertificationWithoutStudent() {
+    public void addCertificationWithoutStudent(String certificateName) {
 
-        WebElement dropdown = wait.until(ExpectedConditions.elementToBeClickable(certificateDropdown));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", dropdown);
+        By overlay = By.cssSelector("div[data-slot='dialog-overlay']");
+        wait.until(ExpectedConditions.invisibilityOfElementLocated(overlay));
 
-        selectRandomCertificates();
+        WebElement dropdown = wait.until(
+                ExpectedConditions.elementToBeClickable(certificateDropdown)
+        );
+        dropdown.click();
+
+        selectCertificateByName(certificateName);
 
         driver.findElement(By.xpath("//body")).click();
 
         clickSave();
     }
-
     /* ================= ERROR MESSAGE ================= */
 
     public String getStudentErrorMessage() {
@@ -472,4 +483,61 @@ public class CertificationPage extends BasePage {
         }
         return true;
     }
+    // certification
+    private final By importButton = By.xpath("//button[.='Import']");
+    private final By chooseFileButton = By.xpath("//button[contains(text(),'Chọn tệp')]");
+    private final By importButtonAfter = By.xpath("//button[contains(text(),'Hủy')]/following-sibling::button[contains(.,'Import')]");
+    public void importFile(String filePath) {
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        // 👉 mở popup
+        wait.until(ExpectedConditions.elementToBeClickable(importButton)).click();
+
+        // 👉 tìm input file gần button "Chọn tệp"
+        WebElement input = wait.until(ExpectedConditions.presenceOfElementLocated(
+                By.xpath("//button[contains(text(),'Chọn tệp')]/parent::*/input")
+        ));
+
+        // 👉 nếu bị hidden thì show ra
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript("arguments[0].style.display='block';", input);
+
+        // 👉 upload file
+        input.sendKeys(filePath);
+
+        // 👉 click Import
+        wait.until(ExpectedConditions.elementToBeClickable(importButtonAfter)).click();
     }
+    public void uploadFile(String filePath) {
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        WebElement input = wait.until(ExpectedConditions.presenceOfElementLocated(importButton));
+
+        // nếu bị hidden thì show ra
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript("arguments[0].style.display='block';", input);
+
+        input.sendKeys(filePath);
+    }
+    private By studentRows = By.xpath("//table/tbody/tr/td[3]");
+    public List<String> getStudentFullNames() {
+        List<String> fullNames = new ArrayList<>();
+
+        int rowCount = driver.findElements(By.xpath("//tbody/tr")).size();
+
+        int hoLotCol = getColumnIndex("HỌ LÓT");
+        int tenCol = getColumnIndex("TÊN");
+
+        for (int i = 1; i <= rowCount; i++) {
+            String hoLot = getCell(i, hoLotCol).getText().trim();
+            String ten = getCell(i, tenCol).getText().trim();
+
+            String fullName = (hoLot + " " + ten).trim();
+            fullNames.add(fullName);
+        }
+
+        return fullNames;
+    }
+}
+

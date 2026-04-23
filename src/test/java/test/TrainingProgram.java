@@ -2,6 +2,7 @@ package test;
 
 import com.github.javafaker.Faker;
 import common.BaseTest;
+import io.qameta.allure.Issue;
 import jdk.jfr.Description;
 import models.Setting.SubjectItem;
 import models.Setting.TrainingProgramItem;
@@ -121,71 +122,66 @@ public class TrainingProgram extends BaseTest {
 
         softAssert.assertAll();
     }
-//    @Description("User can search by training program name")
-//    @Test
-//    public void UMG_18_UserCanSearchByTrainingProgram() throws InterruptedException {
-//
-//        Thread.sleep(1000);
-//
-//        loginPage.login(Constants.EMAIL, Constants.PASSWORD);
-//
-//        Thread.sleep(2000);
-//
-//        trainingProgramPage.goToTrainingProgramPage();
-//
-//        Thread.sleep(5000);
-//
-//        TrainingProgramItem program = trainingProgramPage.getRandomTrainingProgram();
-//        Thread.sleep(2000);
-//        String programName = program.getProgramName();
-//
-//        trainingProgramPage.searchTrainingProgram(programName);
-//
-//        Thread.sleep(2000);
-//
-//        softAssert.assertTrue(
-//                trainingProgramPage.verifySearchResultContainsKeyword(programName),
-//                "Search result does not contain searched training program name"
-//        );
-//
-//        softAssert.assertAll();
-//    }
-@Test
-public void TPG005_VerifySearchWithNonExistingKeywordReturnsEmpty() throws InterruptedException {
+    @Test
+    public void UMG_18_UserCanSearchByTrainingProgram() throws InterruptedException {
 
-    Thread.sleep(1000);
-    loginPage.login(Constants.EMAIL, Constants.PASSWORD);
+        Thread.sleep(1000);
 
-    Thread.sleep(2000);
-    trainingProgramPage.goToTrainingProgramPage();
+        loginPage.login(Constants.EMAIL, Constants.PASSWORD);
 
-    Thread.sleep(3000);
+        Thread.sleep(2000);
 
-    // 👉 tạo keyword random chắc chắn không tồn tại
-    String keyword = "zzz_not_exist_" + System.currentTimeMillis();
+        trainingProgramPage.goToTrainingProgramPage();
 
-    System.out.println("Search keyword: " + keyword);
+        Thread.sleep(5000);
 
-    // 👉 search
-    trainingProgramPage.searchTrainingProgram(keyword);
+        TrainingProgramItem program = trainingProgramPage.getRandomTrainingProgram();
 
-    Thread.sleep(2000);
+        Thread.sleep(2000);
 
-    // 👉 lấy data table
-    ArrayList<TrainingProgramItem> actualPrograms =
-            trainingProgramPage.getAllPrograms();
+        String programName = program.getMajor();
 
-    System.out.println("Actual Programs:");
-    actualPrograms.forEach(System.out::println);
+        trainingProgramPage.searchTrainingProgram(programName);
 
-    // 👉 verify table rỗng
-    softAssert.assertTrue(
-            actualPrograms.isEmpty(),
-            "Expected empty table but found data"
-    );
+        Thread.sleep(2000);
 
-    softAssert.assertAll();
-}
+        softAssert.assertTrue(
+                trainingProgramPage.verifySearchResultContainsKeyword(programName),
+                "Search result does not contain searched training program name"
+        );
+
+        softAssert.assertAll();
+    }
+    @Test
+    public void TPG005_VerifySearchWithNonExistingKeywordReturnsEmpty() throws InterruptedException {
+
+        Thread.sleep(1000);
+        loginPage.login(Constants.EMAIL, Constants.PASSWORD);
+
+        Thread.sleep(2000);
+        trainingProgramPage.goToTrainingProgramPage();
+
+        Thread.sleep(3000);
+
+        String keyword = "zzz_not_exist_" + System.currentTimeMillis();
+
+        System.out.println("Search keyword: " + keyword);
+
+        trainingProgramPage.searchTrainingProgram(keyword);
+
+        Thread.sleep(2000);
+
+        String actualMessage = trainingProgramPage.getNoDataMessage();
+        String expectedMessage = "Chưa có chương trình đào tạo nào";
+
+        softAssert.assertEquals(
+                actualMessage,
+                expectedMessage,
+                "No data message is incorrect"
+        );
+
+        softAssert.assertAll();
+    }
     @Description("User can search training program with non-existing name")
     @Test
     public void UMG_19_SearchTrainingProgram_NoDataDisplayed() throws InterruptedException {
@@ -214,52 +210,51 @@ public void TPG005_VerifySearchWithNonExistingKeywordReturnsEmpty() throws Inter
 
         softAssert.assertAll();
     }
-//    @Description("Verify subject added successfully to training program")
-//    @Test
-//    public void TPG002_VerifySubjectAddedSuccessfully() throws InterruptedException {
-//
-//        Faker faker = new Faker();
-//
-//        Thread.sleep(1000);
-//
-//        loginPage.login(Constants.EMAIL, Constants.PASSWORD);
-//
-//        Thread.sleep(1000);
-//
-//        trainingProgramPage.goToTrainingProgramPage();
-//
-//        Thread.sleep(1000);
-//
-//        // chọn random major
-//        trainingProgramPage.clickRandomMajor();
-//
-//        Thread.sleep(1000);
-//
-//        String subjectCode = "HP_" + faker.number().numberBetween(100, 999);
-//        String subjectName = faker.educator().course();
-//        String credit = String.valueOf(faker.number().numberBetween(1, 5));
-//        String subjectType = "Bắt buộc";
-//
-//        ArrayList<SubjectItem> expectedSubjects = new ArrayList<>();
-//
-//        trainingProgramPage.addSubject(subjectCode, subjectName, credit, subjectType);
-//
-//        expectedSubjects.add(new SubjectItem(subjectCode, subjectName, credit));
-//
-//        Thread.sleep(1000);
-//
-//        trainingProgramPage.scrollToSubject(subjectName);
-//
-//        ArrayList<SubjectItem> actualSubjects =
-//                trainingProgramPage.getAllSubjects();
-//
-//        softAssert.assertTrue(
-//                actualSubjects.containsAll(expectedSubjects),
-//                "Subject details do not match between Add form and table"
-//        );
-//
-//        softAssert.assertAll();
-//    }
+    @Issue("T001")
+    @Description("Verify subject added successfully to training program")
+    @Test
+    public void TPG002_VerifySubjectAddedSuccessfully() throws InterruptedException {
+
+        Faker faker = new Faker();
+
+        Thread.sleep(1000);
+        loginPage.login(Constants.EMAIL, Constants.PASSWORD);
+
+        Thread.sleep(1000);
+        trainingProgramPage.goToTrainingProgramPage();
+
+        Thread.sleep(1000);
+        trainingProgramPage.clickRandomMajor();
+
+        Thread.sleep(1000);
+
+        String subjectCode = "HP_" + faker.number().numberBetween(100, 999);
+        String subjectName = faker.educator().course();
+        String credit = String.valueOf(faker.number().numberBetween(1, 5));
+        String subjectType = "Bắt buộc";
+
+        trainingProgramPage.addSubject(subjectCode, subjectName, credit, subjectType);
+
+        Thread.sleep(2000);
+
+        trainingProgramPage.scrollToSubject(subjectName);
+
+        Thread.sleep(1000);
+
+        ArrayList<SubjectItem> actualSubjects = trainingProgramPage.getAllSubjects();
+
+        Thread.sleep(1000);
+
+        boolean found = actualSubjects.stream().anyMatch(s ->
+                s.getSubjectCode().equals(subjectCode) &&
+                        s.getSubjectName().equals(subjectName) &&
+                        s.getCredit().equals(credit)
+        );
+
+        softAssert.assertTrue(found, "Subject not found or mismatch");
+
+        softAssert.assertAll();
+    }
     @Description("Verify cannot add subject when subject code is empty")
     @Test
     public void TPG003_VerifyCannotAddSubject_WhenCodeEmpty() throws InterruptedException {
@@ -289,9 +284,9 @@ public void TPG005_VerifySearchWithNonExistingKeywordReturnsEmpty() throws Inter
     public void TPG004_VerifyCannotAddSubject_WhenNameEmpty() throws InterruptedException {
 
         Faker faker = new Faker();
-        Thread.sleep(1000);
+        Thread.sleep(2000);
         loginPage.login(Constants.EMAIL, Constants.PASSWORD);
-        Thread.sleep(1000);
+        Thread.sleep(2000);
         trainingProgramPage.goToTrainingProgramPage();
         Thread.sleep(5000);
         trainingProgramPage.clickRandomMajor();
@@ -348,21 +343,21 @@ public void TPG005_VerifySearchWithNonExistingKeywordReturnsEmpty() throws Inter
 
         trainingProgramPage.clickRandomMajor();
 
-        Thread.sleep(2000);
+        Thread.sleep(3000);
 
         String subjectCode = trainingProgramPage.getRandomSubjectCode();
 
         Thread.sleep(1000);
 
         trainingProgramPage.addSubject(
-                subjectCode,
+               subjectCode,
                 "Test Duplicate Subject",
                 "3",
                 "Bắt buộc"
         );
 
         softAssert.assertTrue(
-                trainingProgramPage.isErrorMessageDisplayed("Mã học phần đã tồn tại"),
+                trainingProgramPage.isErrorMessageDisplayed("đã tồn tại trong chương trình đào tạo"),
                 "Error message not displayed when subject code duplicated"
         );
 

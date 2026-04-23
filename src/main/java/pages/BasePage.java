@@ -2,6 +2,7 @@ package pages;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.awt.*;
@@ -50,5 +51,9 @@ public class BasePage {
 
         robot.keyPress(KeyEvent.VK_ENTER);
         robot.keyRelease(KeyEvent.VK_ENTER);
+    }
+    public void waitForTableLoaded() {
+        By rows = By.xpath("//tr");
+        wait.until(ExpectedConditions.numberOfElementsToBeMoreThan(rows, 0));
     }
 }
