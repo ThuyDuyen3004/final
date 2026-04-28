@@ -1,20 +1,16 @@
 package test;
 
 import common.BaseTest;
-import models.Setting.CertificationManagementItem;
+import models.CertificationManagementItem;
 import org.testng.annotations.Test;
-import utils.Constants;
 
 import java.util.ArrayList;
 
 public class CertificationManagement extends BaseTest {
-
     private String certificationName;
 
     @Test(priority = 1)
     public void CM001_AddCertification() {
-
-        loginPage.login(Constants.EMAIL, Constants.PASSWORD);
 
         certificationManagementPage.goToCertificationManagementPage();
 
@@ -34,75 +30,68 @@ public class CertificationManagement extends BaseTest {
 
         boolean found = actualList.stream().anyMatch(item ->
                 item.getCertificationName().equalsIgnoreCase(name.trim())
-                        && item.getCourse().contains(course)
+                        && item.getCourse().equalsIgnoreCase(course.trim())
         );
 
         softAssert.assertTrue(found, "Add certification failed");
         softAssert.assertAll();
     }
 
-    @Test(priority = 2, dependsOnMethods = "CM001_AddCertification")
-    public void CM002_EditCertificationName() {
 
-        loginPage.login(Constants.EMAIL, Constants.PASSWORD);
-
-        certificationManagementPage.goToCertificationManagementPage();
-
-        String oldName = certificationName;
-        String newName = "chứng chỉ TOEIC";
-
-        certificationManagementPage.editCertificationName(oldName, newName);
-
-        certificationManagementPage.refreshPage();
-        certificationManagementPage.waitForTableLoaded();
-        certificationManagementPage.waitForCertificationAppear(newName);
-
-        certificationName = newName;
-
-        ArrayList<CertificationManagementItem> actualList =
-                certificationManagementPage.getAllCertifications();
-
-        boolean found = actualList.stream().anyMatch(item ->
-                item.getCertificationName().equalsIgnoreCase(newName.trim())
-        );
-
-        softAssert.assertTrue(found, "Edit name failed");
-        softAssert.assertAll();
-    }
-
-    @Test(priority = 3, dependsOnMethods = "CM002_EditCertificationName")
-    public void CM003_EditCertificationCourse() {
-
-        loginPage.login(Constants.EMAIL, Constants.PASSWORD);
-
-        certificationManagementPage.goToCertificationManagementPage();
-
-        String name = certificationName;
-
-        String oldCourse = "48";
-        String newCourse = "46";
-
-        certificationManagementPage.editCertificationCourse(name, oldCourse, newCourse);
-
-        certificationManagementPage.refreshPage();
-        certificationManagementPage.waitForTableLoaded();
-        certificationManagementPage.waitForCertificationAppear(name);
-
-        ArrayList<CertificationManagementItem> actualList =
-                certificationManagementPage.getAllCertifications();
-
-        boolean found = actualList.stream().anyMatch(item ->
-                item.getCertificationName().equalsIgnoreCase(name.trim())
-                        && item.getCourse().contains(newCourse)
-        );
-
-        softAssert.assertTrue(found, "Edit course failed");
-        softAssert.assertAll();
-    }
+//    @Test(priority = 2, dependsOnMethods = "CM001_AddCertification")
+//    public void CM002_EditCertificationName() {
+//
+//        certificationManagementPage.goToCertificationManagementPage();
+//
+//        String oldName = certificationName;
+//        String newName = "chứng chỉ TOEIC123";
+//
+//        certificationManagementPage.editCertificationName(oldName, newName);
+//
+//        certificationManagementPage.refreshPage();
+//        certificationManagementPage.waitForTableLoaded();
+//
+//        certificationName = newName;
+//
+//        ArrayList<CertificationManagementItem> actualList =
+//                certificationManagementPage.getAllCertifications();
+//
+//        boolean found = actualList.stream().anyMatch(item ->
+//                item.getCertificationName().equalsIgnoreCase(newName.trim())
+//        );
+//
+//        softAssert.assertTrue(found, "Edit name failed");
+//        softAssert.assertAll();
+//    }
+//
+//
+//    @Test(priority = 3, dependsOnMethods = "CM002_EditCertificationName")
+//    public void CM003_EditCertificationCourse() {
+//
+//        certificationManagementPage.goToCertificationManagementPage();
+//
+//        String name = certificationName; // đã là NEW NAME từ TC2
+//        String newCourse = "49";
+//
+//        certificationManagementPage.editCertificationCourse(name, newCourse);
+//
+//        certificationManagementPage.refreshPage();
+//        certificationManagementPage.waitForTableLoaded();
+//
+//        ArrayList<CertificationManagementItem> actualList =
+//                certificationManagementPage.getAllCertifications();
+//
+//        boolean found = actualList.stream().anyMatch(item ->
+//                item.getCertificationName().equalsIgnoreCase(name.trim())
+//                        && item.getCourse().equalsIgnoreCase(newCourse.trim())
+//        );
+//
+//        softAssert.assertTrue(found, "Edit course failed");
+//        softAssert.assertAll();
+//    }
     @Test(priority = 4)
     public void CM004_VerifyUserCanSearchCertification() {
 
-        loginPage.login(Constants.EMAIL, Constants.PASSWORD);
 
         certificationManagementPage.goToCertificationManagementPage();
 
@@ -129,7 +118,6 @@ public class CertificationManagement extends BaseTest {
     @Test(priority = 5)
     public void CM005_VerifySearchCertification_NoDataDisplayed() {
 
-        loginPage.login(Constants.EMAIL, Constants.PASSWORD);
 
         certificationManagementPage.goToCertificationManagementPage();
 

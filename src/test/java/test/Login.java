@@ -1,90 +1,195 @@
 package test;
 
-import common.BaseTest;
+import io.github.bonigarcia.wdm.WebDriverManager;
 import jdk.jfr.Description;
-import org.testng.annotations.Test;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.testng.annotations.*;
+import org.testng.asserts.SoftAssert;
+import pages.HomePage;
+import pages.LoginPage;
 import utils.Constants;
 
-public class Login extends BaseTest {
-    @Description("User can login successfully with valid account")
-    @Test
-    public void LOG03_UserCanLoginWithValidAcc() throws InterruptedException {
+import java.time.Duration;
 
-        Thread.sleep(1000);
+public class Login {
+
+    private WebDriver driver;
+    private LoginPage loginPage;
+    private HomePage homePage;
+    private SoftAssert softAssert;
+
+    @BeforeMethod
+    @Parameters("browser")
+    public void setUp(@Optional("chrome") String browser) {
+
+        driver = createDriver(browser);
+
+        driver.manage().window().maximize();
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
+        driver.get(Constants.URL);
+
+        loginPage = new LoginPage(driver);
+        homePage = new HomePage(driver);
+        softAssert = new SoftAssert();
+    }
+
+    // ✅ FIX: tách hàm createDriver đúng chuẩn
+    private WebDriver createDriver(String browser) {
+
+        switch (browser.toLowerCase().trim()) {
+
+            case "chrome":
+                WebDriverManager.chromedriver().setup();
+                return new ChromeDriver();
+
+            case "firefox":
+                WebDriverManager.firefoxdriver().setup();
+                return new FirefoxDriver();
+
+            case "edge":
+                System.setProperty("webdriver.edge.driver",
+                        "C:\\Users\\ACER\\Downloads\\edgedriver_win64\\msedgedriver.exe");
+                return new EdgeDriver();
+
+            default:
+                WebDriverManager.chromedriver().setup();
+                return new ChromeDriver();
+        }
+    }
+
+    @AfterMethod
+    public void tearDown() {
+        if (driver != null) {
+            driver.quit();
+        }
+    }
+
+    @Test
+    @Description("User can login successfully with valid account")
+    public void LOG03_UserCanLoginWithValidAcc() {
 
         loginPage.login(Constants.EMAIL, Constants.PASSWORD);
 
-        Thread.sleep(2000);
-
         softAssert.assertEquals(homePage.getUsername(), "Trang Than",
-                "the username is displayed not match with expected result");
+                "username mismatch");
 
         softAssert.assertEquals(homePage.getRole(), "Giáo vụ khoa",
-                "the role is displayed not match with expected result");
+                "role mismatch");
 
         softAssert.assertAll();
     }
 
-    @Description("An error message displays when user tries to login with Email empty")
     @Test
-    public void LOG04_UserCanNotLoginWithEmailEmpty() throws InterruptedException {
-
-        Thread.sleep(1000);
+    @Description("Email empty")
+    public void LOG04_UserCanNotLoginWithEmailEmpty() {
 
         loginPage.login("", Constants.PASSWORD);
 
-        Thread.sleep(1000);
-
-        softAssert.assertEquals(loginPage.getMessage(), "Vui lòng nhập đầy đủ email và mật khẩu",
-                "the message is not match with expected message");
+        softAssert.assertEquals(loginPage.getMessage(),
+                "Vui lòng nhập đầy đủ email và mật khẩu");
 
         softAssert.assertAll();
     }
 
-    @Description("An error message displays when user tries to login with Email invalid")
     @Test
-    public void LOG05_UserCanNotLoginWithEmailInvalid() throws InterruptedException {
-
-        Thread.sleep(1000);
+    @Description("Email invalid")
+    public void LOG05_UserCanNotLoginWithEmailInvalid() {
 
         loginPage.login(loginPage.randomEmail(), Constants.PASSWORD);
 
-        Thread.sleep(1000);
-
-        softAssert.assertEquals(loginPage.getMessage(), "Email hoặc mật khẩu không đúng",
-                "the message is not match with expected message");
+        softAssert.assertEquals(loginPage.getMessage(),
+                "Incorrect email or password");
 
         softAssert.assertAll();
     }
 
-    @Description("An error message displays when user tries to login with Email invalid")
     @Test
-    public void LOG006_UserCanNotLoginWithPasswordEmpty() throws InterruptedException {
-
-        Thread.sleep(1000);
+    @Description("Password empty")
+    public void LOG06_UserCanNotLoginWithPasswordEmpty() {
 
         loginPage.login(Constants.EMAIL, "");
 
-        Thread.sleep(1000);
-
-        softAssert.assertEquals(loginPage.getMessage(), "Vui lòng nhập đầy đủ email và mật khẩu",
-                "the message is not match with expected message");
+        softAssert.assertEquals(loginPage.getMessage(),
+                "Vui lòng nhập đầy đủ email và mật khẩu");
 
         softAssert.assertAll();
     }
 
-    @Description("An error message displays when user tries to login with Password invalid")
     @Test
-    public void LOG007_UserCanNotLoginWithPasswordInvalid() throws InterruptedException {
-
-        Thread.sleep(1000);
+    @Description("Password invalid")
+    public void LOG07_UserCanNotLoginWithPasswordInvalid() {
 
         loginPage.login(Constants.EMAIL, loginPage.randomPasswordDigit());
 
-        Thread.sleep(1000);
+        softAssert.assertEquals(loginPage.getMessage(),
+                "Incorrect email or password");
 
-        softAssert.assertEquals(loginPage.getMessage(), "Email hoặc mật khẩu không đúng",
-                "the message is not match with expected message");
+        softAssert.assertAll();
+    }
+    //
+
+    @Test
+    @Description("User can login successfully with valid account")
+    public void LOG031_UserCanLoginWithValidAcc() {
+
+        loginPage.login(Constants.EMAIL, Constants.PASSWORD);
+
+        softAssert.assertEquals(homePage.getUsername(), "Trang Than",
+                "username mismatch");
+
+        softAssert.assertEquals(homePage.getRole(), "Giáo vụ khoa",
+                "role mismatch");
+
+        softAssert.assertAll();
+    }
+
+    @Test
+    @Description("Email empty")
+    public void LOG041_UserCanNotLoginWithEmailEmpty() {
+
+        loginPage.login("", Constants.PASSWORD);
+
+        softAssert.assertEquals(loginPage.getMessage(),
+                "Vui lòng nhập đầy đủ email và mật khẩu");
+
+        softAssert.assertAll();
+    }
+
+    @Test
+    @Description("Email invalid")
+    public void LOG051_UserCanNotLoginWithEmailInvalid() {
+
+        loginPage.login(loginPage.randomEmail(), Constants.PASSWORD);
+
+        softAssert.assertEquals(loginPage.getMessage(),
+                "Incorrect email or password");
+
+        softAssert.assertAll();
+    }
+
+    @Test
+    @Description("Password empty")
+    public void LOG061_UserCanNotLoginWithPasswordEmpty() {
+
+        loginPage.login(Constants.EMAIL, "");
+
+        softAssert.assertEquals(loginPage.getMessage(),
+                "Vui lòng nhập đầy đủ email và mật khẩu");
+
+        softAssert.assertAll();
+    }
+
+    @Test
+    @Description("Password invalid")
+    public void LOG071_UserCanNotLoginWithPasswordInvalid() {
+
+        loginPage.login(Constants.EMAIL, loginPage.randomPasswordDigit());
+
+        softAssert.assertEquals(loginPage.getMessage(),
+                "Incorrect email or password");
 
         softAssert.assertAll();
     }

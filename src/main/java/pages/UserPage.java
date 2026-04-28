@@ -1,8 +1,7 @@
-
 package pages;
 
 import com.github.javafaker.Faker;
-import models.Setting.UserItem;
+import models.UserItem;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -11,11 +10,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class UserPage extends BasePage {
+public class UserPage extends BasePage{
 
     public UserPage(WebDriver driver) {
         super(driver);
     }
+
+    private final Random random = new Random();
+    Faker faker = new Faker(new java.util.Locale("vi"));
 
     /* ================= NAVIGATION ================= */
 
@@ -46,7 +48,8 @@ public class UserPage extends BasePage {
     private final By fullnameLocator = By.xpath("(//input)[3]");
     private final By passwordLocator = By.xpath("//div[5]//input[1]");
     private final By confirmPasswordLocator = By.xpath("//div[6]//input[1]");
-    private final By classDropdownLocator = By.xpath("//label[contains(text(),'Gán lớp')]/following-sibling::div");
+    private final By classDropdownLocator =
+            By.xpath("//label[contains(text(),'Gán lớp')]/following-sibling::div");
 
     private final By saveButton =
             By.xpath("//button[contains(text(),'Lưu')]");
@@ -57,14 +60,14 @@ public class UserPage extends BasePage {
     private final By deleteButton =
             By.xpath("//div[.='Xóa']");
 
-    private final By UpdateIcon =
+    private final By updateButton =
             By.xpath("//div[.='Sửa']");
 
     private final By yesOption =
             By.xpath("//button[.='Có']");
 
     private final By searchBarLocator =
-            By.xpath("//input[@data-slot='input']");
+            By.xpath("//input[@placeholder='Nhập họ tên...']");
 
     private final By noDataMessage =
             By.xpath("//div[contains(@class,'flex')]/span");
@@ -72,6 +75,17 @@ public class UserPage extends BasePage {
     private final By tableRows =
             By.xpath("//tbody/tr");
 
+    /* ================= SAFE TABLE WAIT ================= */
+
+    public void waitForTableLoaded() {
+
+        wait.until(d -> {
+            List<WebElement> rows = d.findElements(tableRows);
+            List<WebElement> empty = d.findElements(noDataMessage);
+
+            return rows.size() > 0 || empty.size() > 0;
+        });
+    }
     /* ================= ADD USER ================= */
 
     public void openAddUserForm() {
@@ -85,16 +99,18 @@ public class UserPage extends BasePage {
                         String confirmPassword) {
 
         wait.until(ExpectedConditions.elementToBeClickable(roleDropdownLocator)).click();
+
         By roleOption = By.xpath(String.format(ROLE_OPTION_XPATH, roleName));
         wait.until(ExpectedConditions.elementToBeClickable(roleOption)).click();
 
         if ("Giáo viên chủ nhiệm".equals(roleName)) {
             wait.until(ExpectedConditions.elementToBeClickable(classDropdownLocator)).click();
+
             List<WebElement> checkboxes = wait.until(
                     ExpectedConditions.visibilityOfAllElementsLocatedBy(classCheckboxButton)
             );
-            WebElement checkbox =
-                    checkboxes.get(new Random().nextInt(checkboxes.size()));
+
+            WebElement checkbox = checkboxes.get(random.nextInt(checkboxes.size()));
 
             if (!"true".equals(checkbox.getAttribute("aria-checked"))) {
                 checkbox.click();
@@ -107,11 +123,11 @@ public class UserPage extends BasePage {
         fillInput(confirmPasswordLocator, confirmPassword);
 
         WebElement saveBtn = wait.until(
-                ExpectedConditions.presenceOfElementLocated(saveButton)
+                ExpectedConditions.elementToBeClickable(saveButton)
         );
 
         new Actions(driver).scrollToElement(saveBtn).perform();
-        wait.until(ExpectedConditions.elementToBeClickable(saveBtn)).click();
+        saveBtn.click();
     }
 
     private void fillInput(By locator, String value) {
@@ -126,15 +142,13 @@ public class UserPage extends BasePage {
 
     /* ================= RANDOM DATA ================= */
 
-    Faker faker = new Faker(new java.util.Locale("vi"));
-
     public String randomRoleName() {
         String[] roles = {
                 "Ban chủ nhiệm khoa",
                 "Giáo viên chủ nhiệm",
                 "Giáo vụ khoa"
         };
-        return roles[new Random().nextInt(roles.length)];
+        return roles[random.nextInt(roles.length)];
     }
 
     public String randomEmail() {
@@ -153,26 +167,29 @@ public class UserPage extends BasePage {
         return "not_exist_" + System.currentTimeMillis();
     }
 
-    /* ================= DELETE USER ================= */
+    /* ================= DELETE ================= */
 
     public String randomClickIconAndDelete() {
 
-        List<WebElement> rows = wait.until(
-                ExpectedConditions.visibilityOfAllElementsLocatedBy(tableRows)
-        );
+        waitForTableLoaded();
 
-        WebElement row = rows.get(new Random().nextInt(rows.size()));
+        List<WebElement> rows = driver.findElements(tableRows);
+
+        if (rows.isEmpty()) {
+            throw new RuntimeException("Table is empty - cannot delete");
+        }
+
+        WebElement row = rows.get(random.nextInt(rows.size()));
 
         String deletedEmail = row.findElement(
-                By.xpath(".//td[" + getColumnIndex("Email") + "]")
+                By.xpath(".//td[" + getColumnIndex("EMAIL") + "]")
         ).getText().trim();
 
         WebElement dropdownIcon = row.findElement(
                 By.xpath(".//button[@data-slot='dropdown-menu-trigger']")
         );
 
-        new Actions(driver).moveToElement(dropdownIcon).perform();
-        dropdownIcon.click();
+        new Actions(driver).moveToElement(dropdownIcon).click().perform();
 
         wait.until(ExpectedConditions.elementToBeClickable(deleteButton)).click();
         wait.until(ExpectedConditions.elementToBeClickable(yesOption)).click();
@@ -180,37 +197,88 @@ public class UserPage extends BasePage {
         return deletedEmail;
     }
 
-    /* ================= UPDATE USER ================= */
+    /* ================= UPDATE ================= */
 
     public String openEditForm() {
 
+        waitForTableLoaded();
+
+        wait.until(driver -> !driver.findElements(tableRows).isEmpty());
+
         List<WebElement> rows = wait.until(
-                ExpectedConditions.visibilityOfAllElementsLocatedBy(tableRows)
+                driver -> driver.findElements(tableRows)
         );
 
-        WebElement row = rows.get(new Random().nextInt(rows.size()));
+        if (rows.isEmpty()) {
+            throw new RuntimeException("Table is empty - cannot edit");
+        }
+
+        WebElement row = rows.get(random.nextInt(rows.size()));
 
         String email = row.findElement(
-                By.xpath(".//td[" + getColumnIndex("Email") + "]")
+                By.xpath(".//td[" + getColumnIndex("EMAIL") + "]")
         ).getText().trim();
 
         WebElement dropdownIcon = row.findElement(
                 By.xpath(".//button[@data-slot='dropdown-menu-trigger']")
         );
 
-        new Actions(driver).moveToElement(dropdownIcon).perform();
-        dropdownIcon.click();
+        wait.until(ExpectedConditions.elementToBeClickable(dropdownIcon));
 
-        // click Update / Edit
-        By updateButton = By.xpath("//div[.='Cập nhật' or .='Chỉnh sửa']");
+        new Actions(driver)
+                .moveToElement(dropdownIcon)
+                .click()
+                .perform();
+
         wait.until(ExpectedConditions.elementToBeClickable(updateButton)).click();
 
         return email;
     }
+    public void updateUser(String roleName,
+                           String email,
+                           String fullName,
+                           String password,
+                           String confirmPassword) {
 
+        if (roleName != null && !roleName.isBlank()) {
+            wait.until(ExpectedConditions.elementToBeClickable(roleDropdownLocator)).click();
 
-    /* ================= SEARCH ================= */
+            By roleOption = By.xpath(String.format(ROLE_OPTION_XPATH, roleName));
+            wait.until(ExpectedConditions.elementToBeClickable(roleOption)).click();
 
+            if ("Giáo viên chủ nhiệm".equals(roleName)) {
+                wait.until(ExpectedConditions.elementToBeClickable(classDropdownLocator)).click();
+
+                List<WebElement> checkboxes = wait.until(
+                        ExpectedConditions.visibilityOfAllElementsLocatedBy(classCheckboxButton)
+                );
+
+                WebElement checkbox = checkboxes.get(random.nextInt(checkboxes.size()));
+
+                if (!"true".equals(checkbox.getAttribute("aria-checked"))) {
+                    checkbox.click();
+                }
+                driver.findElement(saveButton).click();
+            }
+        }
+
+        if (email != null && !email.isBlank()) fillInput(emailLocator, email);
+        if (fullName != null && !fullName.isBlank()) fillInput(fullnameLocator, fullName);
+        if (password != null && !password.isBlank()) fillInput(passwordLocator, password);
+        if (confirmPassword != null && !confirmPassword.isBlank()) {
+            fillInput(confirmPasswordLocator, confirmPassword);
+        }
+
+        WebElement saveBtn = wait.until(
+                ExpectedConditions.elementToBeClickable(saveButton)
+        );
+
+        new Actions(driver).scrollToElement(saveBtn).perform();
+        saveBtn.click();
+    }
+
+//    /* ================= SEARCH ================= */
+//
     public void searchUser(String keyword) {
         WebElement searchBox = wait.until(
                 ExpectedConditions.visibilityOfElementLocated(searchBarLocator)
@@ -218,34 +286,25 @@ public class UserPage extends BasePage {
         searchBox.clear();
         searchBox.sendKeys(keyword);
     }
+    public void resetSearch() {
+        WebElement input = wait.until(
+                ExpectedConditions.elementToBeClickable(searchBarLocator)
+        );
 
-    public boolean verifySearchResultContainsKeyword(String keyword) {
-        wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(tableRows));
+        input.clear();
+        input.sendKeys(Keys.ENTER);
 
-        for (int i = 1; i <= getTotalUsers(); i++) {
-            String username = getCell(i, getColumnIndex("Tên đăng nhập"))
-                    .getText().toLowerCase();
-
-            String email = getCell(i, getColumnIndex("Email"))
-                    .getText().toLowerCase();
-
-            if (username.contains(keyword.toLowerCase())
-                    || email.contains(keyword.toLowerCase())) {
-                return true;
-            }
-        }
-        return false;
+        waitForTableLoaded();
     }
 
     public boolean verifyNoDataMessageDisplayed() {
-        WebElement msg = wait.until(
+        return wait.until(
                 ExpectedConditions.visibilityOfElementLocated(noDataMessage)
-        );
-        return msg.getText().trim().equals("Không có dữ liệu");
+        ).getText().trim().equals("Không có dữ liệu");
     }
 
     public boolean isErrorMessageDisplayed() {
-        return driver.findElements(messageLocator).size() > 0;
+        return !driver.findElements(messageLocator).isEmpty();
     }
 
     public String getMessage() {
@@ -254,12 +313,13 @@ public class UserPage extends BasePage {
         ).getText().trim();
     }
 
-    /* ================= TABLE UTILS ================= */
+    /* ================= TABLE ================= */
 
     private static final List<String> COLUMN_NAMES = List.of(
             "STT",
-            "Tên đăng nhập",
-            "Email",
+            "HỌ TÊN",
+            "EMAIL",
+            "VAI TRÒ",
             "Trạng thái"
     );
 
@@ -267,90 +327,84 @@ public class UserPage extends BasePage {
         return COLUMN_NAMES.indexOf(columnName) + 1;
     }
 
-    private WebElement getCell(int row, int column) {
-        String xpath = String.format("//table/tbody/tr[%d]/td[%d]", row, column);
-        return driver.findElement(By.xpath(xpath));
-    }
 
     public int getTotalUsers() {
+        waitForTableLoaded();
         return driver.findElements(tableRows).size();
     }
+    private WebElement getCell(int row, int column) {
 
+        wait.until(d -> d.findElements(tableRows).size() > 0);
+
+        return wait.until(driver -> {
+            List<WebElement> rows = driver.findElements(tableRows);
+
+            if (rows.size() < row) return null;
+
+            try {
+                return rows.get(row - 1)
+                        .findElement(By.xpath("./td[" + column + "]"));
+            } catch (StaleElementReferenceException e) {
+                return null;
+            } catch (NoSuchElementException e) {
+                return null;
+            }
+        });
+    }
     public ArrayList<UserItem> getAllUsers() {
+
+        waitForTableLoaded();
+
         ArrayList<UserItem> users = new ArrayList<>();
 
-        for (int i = 1; i <= getTotalUsers(); i++) {
-            String username = getCell(i, getColumnIndex("Tên đăng nhập")).getText().trim();
-            String email = getCell(i, getColumnIndex("Email")).getText().trim();
-            users.add(new UserItem(username, email));
+        int total = getTotalUsers();
+
+        for (int i = 1; i <= total; i++) {
+
+            String fullName = getCell(i, getColumnIndex("HỌ TÊN")).getText().trim();
+            String email = getCell(i, getColumnIndex("EMAIL")).getText().trim();
+            String roleName = getCell(i, getColumnIndex("VAI TRÒ")).getText().trim();
+
+            users.add(new UserItem(fullName, email, roleName, null));
         }
+
         return users;
     }
 
     public UserItem getRandomUser() {
+
+        waitForTableLoaded();
+
+        wait.until(driver -> !getAllUsers().isEmpty());
+
         ArrayList<UserItem> users = getAllUsers();
+
         if (users.isEmpty()) {
             throw new RuntimeException("User table is empty");
         }
-        return users.get(new Random().nextInt(users.size()));
+
+        return users.get(random.nextInt(users.size()));
     }
-    /* ================= UPDATE USER ================= */
 
-    public void updateUser(String roleName,
-                           String email,
-                           String fullName,
-                           String password,
-                           String confirmPassword) {
+    public boolean verifySearchResultContainsKeyword(String keyword) {
 
-        // Update role
-        if (roleName != null && !roleName.isBlank()) {
-            wait.until(ExpectedConditions.elementToBeClickable(roleDropdownLocator)).click();
-            By roleOption = By.xpath(String.format(ROLE_OPTION_XPATH, roleName));
-            wait.until(ExpectedConditions.elementToBeClickable(roleOption)).click();
+        waitForTableLoaded();
 
-            // Nếu là GVCN thì gán lớp + tick checkbox
-            if ("Giáo viên chủ nhiệm".equals(roleName)) {
-                wait.until(ExpectedConditions.elementToBeClickable(classDropdownLocator)).click();
+        String lowerKeyword = keyword.toLowerCase();
 
-                List<WebElement> checkboxes = wait.until(
-                        ExpectedConditions.visibilityOfAllElementsLocatedBy(classCheckboxButton)
-                );
+        for (int i = 1; i <= getTotalUsers(); i++) {
 
-                WebElement checkbox =
-                        checkboxes.get(new Random().nextInt(checkboxes.size()));
+            String username = getCell(i, getColumnIndex("HỌ TÊN"))
+                    .getText().toLowerCase();
 
-                if (!"true".equals(checkbox.getAttribute("aria-checked"))) {
-                    checkbox.click();
-                }
+            String email = getCell(i, getColumnIndex("EMAIL"))
+                    .getText().toLowerCase();
+
+            if (username.contains(lowerKeyword) || email.contains(lowerKeyword)) {
+                return true;
             }
         }
 
-        // Update email
-        if (email != null && !email.isBlank()) {
-            fillInput(emailLocator, email);
-        }
-
-        // Update full name
-        if (fullName != null && !fullName.isBlank()) {
-            fillInput(fullnameLocator, fullName);
-        }
-
-        // Update password
-        if (password != null && !password.isBlank()) {
-            fillInput(passwordLocator, password);
-        }
-
-        // Update confirm password
-        if (confirmPassword != null && !confirmPassword.isBlank()) {
-            fillInput(confirmPasswordLocator, confirmPassword);
-        }
-
-        // Click Save
-        WebElement saveBtn = wait.until(
-                ExpectedConditions.presenceOfElementLocated(saveButton)
-        );
-        new Actions(driver).scrollToElement(saveBtn).perform();
-        wait.until(ExpectedConditions.elementToBeClickable(saveBtn)).click();
+        return false;
     }
-
 }

@@ -1,31 +1,49 @@
 <suite name="Suite All" parallel="tests" thread-count="2">
-    <test name="Test Chrome">
+
+    <listeners>
+        <listener class-name="common.TestListener"/>
+    </listeners>
+
+    <test name="Chrome Test">
         <parameter name="browser" value="chrome"/>
         <classes>
             <class name="test.Login"/>
+            <class name="test.User"/>
             <class name="test.Students"/>
             <class name="test.TrainingProgram"/>
             <class name="test.Certification"/>
-            <class name="test.Regulations"/>
+<!--            <class name="test.Regulations"/>-->
+            <class name="test.Class"/>
+            <class name="test.Major"/>
+<!--            <class name="test.CertificationManagement"/>-->
+            <class name="test.Cohort"/>
         </classes>
     </test>
 
-    <test name="Test Edge">
-        <parameter name="browser" value="edge"/>
-        <class name="test.Login"/>
-        <class name="test.Students"/>
-        <class name="test.TrainingProgram"/>
-        <class name="test.Certification"/>
-        <class name="test.Regulations"/>
-    </test>
+<!--    <test name="Edge Test">-->
+<!--        <parameter name="browser" value="edge"/>-->
+<!--        <classes>-->
+<!--            <class name="test.Login"/>-->
+<!--            <class name="test.User"/>-->
+<!--            <class name="test.Students"/>-->
+<!--            <class name="test.TrainingProgram"/>-->
+<!--            <class name="test.Certification"/>-->
+<!--            <class name="test.Regulations"/>-->
+<!--            <class name="test.Class"/>-->
+<!--        </classes>-->
+<!--    </test>-->
 
-    <test name="Test Firefox">
-        <parameter name="browser" value="firefox"/>
-        <class name="test.Login"/>
-        <class name="test.Students"/>
-        <class name="test.TrainingProgram"/>
-        <class name="test.Certification"/>
-        <class name="test.Regulations"/>
-    </test>
+<!--    <test name="Firefox Test">-->
+<!--        <parameter name="browser" value="firefox"/>-->
+<!--        <classes>-->
+<!--            <class name="test.Login"/>-->
+<!--            <class name="test.User"/>-->
+<!--            <class name="test.Students"/>-->
+<!--            <class name="test.TrainingProgram"/>-->
+<!--            <class name="test.Certification"/>-->
+<!--            <class name="test.Regulations"/>-->
+<!--            <class name="test.Class"/>-->
+<!--        </classes>-->
+<!--    </test>-->
 
 </suite>

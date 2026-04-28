@@ -8,6 +8,11 @@
             <class name="test.Login"/>
         </classes>
     </test>
+    <test name="Run-Tests User">
+        <classes>
+            <class name="test.User"/>
+        </classes>
+    </test>
     <test name="Run-Tests-certification">
         <classes>
         <class name="test.Certification"/>

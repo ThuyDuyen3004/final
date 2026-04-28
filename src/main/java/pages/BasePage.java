@@ -26,13 +26,20 @@ public class BasePage {
     private By chooseFileButton = By.xpath("//button[contains(text(),'Chọn tệp')]");
 
     public void clickMenu(String menuName) {
-        driver.findElement(By.xpath(String.format(menuItemLocator, menuName))).click();
+        By locator = By.xpath(String.format(menuItemLocator, menuName));
+
+        wait.until(ExpectedConditions.elementToBeClickable(locator)).click();
     }
 
     public void goToImportForm(String filePath) throws AWTException {
 
-        driver.findElement(importButton).click();
-        driver.findElement(chooseFileButton).click();
+        wait.until(
+                ExpectedConditions.elementToBeClickable(importButton)
+        ).click();
+
+        wait.until(
+                ExpectedConditions.elementToBeClickable(chooseFileButton)
+        ).click();
 
         Robot robot = new Robot();
         robot.delay(1000);
@@ -56,4 +63,8 @@ public class BasePage {
         By rows = By.xpath("//tr");
         wait.until(ExpectedConditions.numberOfElementsToBeMoreThan(rows, 0));
     }
+    public void refreshPage() {
+        driver.navigate().refresh();
+    }
+
 }

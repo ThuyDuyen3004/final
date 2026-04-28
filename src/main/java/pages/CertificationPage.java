@@ -1,13 +1,17 @@
 package pages;
 
 import models.Setting.CertificateItem;
-import models.Setting.StudentItem;
+import models.StudentItem;
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.awt.*;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.KeyEvent;
 import java.time.Duration;
 import java.util.*;
+import java.util.List;
 
 public class CertificationPage extends BasePage {
 
@@ -22,10 +26,19 @@ public class CertificationPage extends BasePage {
     }
 
     public void goToCertificationPage() {
-        goToSettingPage();
-        clickMenu("Chứng chỉ");
-    }
 
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        goToSettingPage();
+
+        WebElement certificationMenu = wait.until(
+                ExpectedConditions.elementToBeClickable(
+                        By.xpath("//a[normalize-space()='Chứng chỉ'] | //button[normalize-space()='Chứng chỉ']")
+                )
+        );
+
+        certificationMenu.click();
+    }
     /* ================= LOCATORS ================= */
 
     private final By addButton = By.xpath("//button[contains(.,'Thêm')]");
@@ -374,22 +387,30 @@ public class CertificationPage extends BasePage {
         // mở dropdown lớp
         WebElement classDropdown = wait.until(
                 ExpectedConditions.elementToBeClickable(
-                        By.xpath("//button[.='Lớp']")
+                        By.xpath("//button[normalize-space()='Lớp']")
                 )
         );
 
         classDropdown.click();
 
-        // đợi option xuất hiện
-        WebElement option = wait.until(
-                ExpectedConditions.visibilityOfElementLocated(
-                        By.xpath("//div[@role='option'][.='" + className + "']")
+        // đợi dropdown menu thực sự render ra DOM
+        wait.until(
+                ExpectedConditions.presenceOfElementLocated(
+                        By.xpath("//div[@role='listbox' or @role='menu']")
                 )
         );
 
-        // scroll tới option (tránh bị overlay)
+        // đợi option xuất hiện
+        WebElement option = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath("//div[@role='option'][normalize-space()='" + className + "']")
+                )
+        );
+
+        // scroll tới option
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", option);
 
+        // đợi click được thật sự (quan trọng hơn visibility)
         wait.until(ExpectedConditions.elementToBeClickable(option)).click();
     }
     public boolean verifySearchResultContainsKeyword(String keyword) {
@@ -538,6 +559,57 @@ public class CertificationPage extends BasePage {
         }
 
         return fullNames;
+    }
+    // english
+    public void openImportEnglishTab() {
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        WebElement tab = wait.until(
+                ExpectedConditions.elementToBeClickable(
+                        By.xpath("//div[normalize-space(.)='Import CC miễn HP tiếng Anh']")
+                )
+        );
+
+        tab.click();
+    }
+    public void uploadEngFile(String filePath) throws AWTException {
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        // 1. click mở popup
+        wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//button[contains(text(),'Chọn file và import')]")
+        )).click();
+
+        // 2. click "Chọn tệp" → mở Windows dialog
+        wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//button[contains(text(),'Chọn tệp')]")
+        )).click();
+
+        // ⚠️ QUAN TRỌNG: đợi dialog hiện + focus
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        Robot robot = new Robot();
+        robot.setAutoDelay(200);
+
+        // 3. copy path vào clipboard
+        StringSelection selection = new StringSelection(filePath);
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, null);
+
+        // 4. Ctrl + V
+        robot.keyPress(KeyEvent.VK_CONTROL);
+        robot.keyPress(KeyEvent.VK_V);
+        robot.keyRelease(KeyEvent.VK_V);
+        robot.keyRelease(KeyEvent.VK_CONTROL);
+
+        // 5. Enter
+        robot.keyPress(KeyEvent.VK_ENTER);
+        robot.keyRelease(KeyEvent.VK_ENTER);
     }
 }
 

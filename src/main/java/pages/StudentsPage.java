@@ -1,7 +1,7 @@
 package pages;
 
 import com.github.javafaker.Faker;
-import models.Setting.StudentItem;
+import models.StudentItem;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -161,9 +161,11 @@ public class StudentsPage extends BasePage {
     /* ================= ADD STUDENT ================= */
 
     public void openAddStudentForm() {
-        driver.findElement(addButtonLocator).click();
-    }
 
+        wait.until(
+                ExpectedConditions.elementToBeClickable(addButtonLocator)
+        ).click();
+    }
     /* ================= TABLE UTILS ================= */
 
     private static final List<String> COLUMN_NAMES = List.of(
@@ -205,6 +207,10 @@ public class StudentsPage extends BasePage {
 
     public StudentItem getRandomStudent() {
 
+        wait.until(
+                ExpectedConditions.visibilityOfElementLocated(tableRows)
+        );
+
         ArrayList<StudentItem> students = getAllStudents();
 
         if (students.isEmpty()) {
@@ -241,7 +247,6 @@ public class StudentsPage extends BasePage {
 
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
 
-        // mở dropdown lớp
         WebElement classDropdown = wait.until(
                 ExpectedConditions.elementToBeClickable(
                         By.xpath("//button[@role='combobox'][2]")
@@ -250,16 +255,22 @@ public class StudentsPage extends BasePage {
 
         classDropdown.click();
 
-        // đợi option xuất hiện
-        WebElement option = wait.until(
-                ExpectedConditions.visibilityOfElementLocated(
-                        By.xpath("//div[@role='option'][.='" + className + "']")
-                )
+        // chờ dropdown option render xong (ổn định hơn visibility)
+        By optionLocator = By.xpath("//div[@role='option'][.='" + className + "']");
+
+        wait.until(
+                ExpectedConditions.presenceOfElementLocated(optionLocator)
         );
 
-        // scroll tới option (tránh bị overlay)
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", option);
+        WebElement option = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(optionLocator)
+        );
 
+        // scroll để tránh bị overlay che
+        ((JavascriptExecutor) driver)
+                .executeScript("arguments[0].scrollIntoView({block:'center'});", option);
+
+        // thêm wait click lại lần cuối cho chắc (tránh stale/overlay)
         wait.until(ExpectedConditions.elementToBeClickable(option)).click();
     }
 
@@ -284,7 +295,10 @@ public class StudentsPage extends BasePage {
     }
 
     public String getValidationMessage() {
-        return driver.findElement(mgsLocator).getText();
+
+        return wait.until(
+                ExpectedConditions.visibilityOfElementLocated(mgsLocator)
+        ).getText();
     }
 
     // delete
@@ -422,8 +436,11 @@ public class StudentsPage extends BasePage {
 
         searchBox.clear();
         searchBox.sendKeys(mssv);
-    }
 
+        wait.until(
+                ExpectedConditions.textToBePresentInElementValue(searchInput, mssv)
+        );
+    }
     public boolean verifySearchResultContainsMSSV(String mssv) {
 
         List<WebElement> results = driver.findElements(

@@ -1,13 +1,11 @@
-
 package pages;
 
-import models.Setting.ClassItem;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.Actions;
+import models.ClassItem;
+import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -18,30 +16,28 @@ public class ClassPage extends BasePage {
         super(driver);
     }
 
-    /* ================= NAVIGATION ================= */
+    // ================= MENU =================
 
     public void goToSettingPage() {
         clickMenu("Cài đặt");
     }
 
-    public void goToUserManagePage() {
+    public void goToClassManagePage() {
         goToSettingPage();
         clickMenu("Quản lý lớp học");
     }
 
-    /* ================= LOCATORS ================= */
+    // ================= LOCATORS =================
 
     private final By addButton = By.xpath("//button[contains(text(),'Thêm')]");
-    private final By classInput = By.xpath("//div[@class='space-y-2']/input");
-    private final By majorDropdown = By.xpath("//button[@role='combobox' and contains(.,'Chuyên ngành')]");
-    private final By teacherDropdown = By.xpath("//button[@role='combobox' and contains(.,'Giáo viên phụ trách')]");
+    private final By searchInput = By.xpath("//input[@placeholder='Nhập tên lớp...']");
     private final By saveButton = By.xpath("//button[contains(text(),'Lưu')]");
-    private final By searchInput = By.xpath("//input[@data-slot='input']");
-    private final By errorMessage = By.xpath("//p[contains(@class,'text-sm text-red')]");
-    private final By deleteButton = By.xpath("//div[.='Xóa']");
-    private final By confirmYesButton = By.xpath("//button[.='Có']");
-    private final By noDataMessage = By.xpath("//div[contains(@class,'text-sm')]");
+    private final By classInput = By.xpath("//input[@placeholder='Tên lớp']");
     private final By tableRows = By.xpath("//tbody/tr");
+    private final By noDataMessage = By.xpath("//div[contains(@class,'text-sm')]");
+
+    private final By confirmYesButton = By.xpath("//button[.='Có']");
+    private final By errorMessage = By.xpath("//p[contains(@class,'red')]");
 
     private static final String OPTION_XPATH =
             "//div[@role='option' and normalize-space(.)='%s']";
@@ -49,44 +45,81 @@ public class ClassPage extends BasePage {
     private static final List<String> COLUMN_NAMES = List.of(
             "STT",
             "TÊN LỚP",
+            "KHÓA",
             "CHUYÊN NGÀNH",
             "GIÁO VIÊN PHỤ TRÁCH",
             "SỐ LƯỢNG"
     );
 
-    /* ================= ADD CLASS ================= */
+    // ================= COMMON =================
 
     public void openAddClassForm() {
         wait.until(ExpectedConditions.elementToBeClickable(addButton)).click();
     }
 
-    public void selectMajor(String majorName) {
-        wait.until(ExpectedConditions.elementToBeClickable(majorDropdown)).click();
-        wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath(String.format(OPTION_XPATH, majorName))
-        )).click();
+    private void openSelect(String label) {
+        By locator = By.xpath(
+                String.format("//button[@role='combobox' and contains(.,'%s')]", label)
+        );
+        wait.until(ExpectedConditions.elementToBeClickable(locator)).click();
     }
 
-    public void selectTeacher(String teacherName) {
-        wait.until(ExpectedConditions.elementToBeClickable(teacherDropdown)).click();
-        wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath(String.format(OPTION_XPATH, teacherName))
-        )).click();
+    private void selectOption(String value) {
+        By option = By.xpath(String.format(OPTION_XPATH, value));
+        wait.until(ExpectedConditions.elementToBeClickable(option)).click();
     }
 
-    public void addClass(String className, String majorName, String teacherName) {
+    private int getColumnIndex(String columnName) {
+        for (int i = 0; i < COLUMN_NAMES.size(); i++) {
+            if (COLUMN_NAMES.get(i).equalsIgnoreCase(columnName)) {
+                return i + 1;
+            }
+        }
+        throw new RuntimeException("Column not found: " + columnName);
+    }
+
+    private WebElement getCell(int row, int col) {
+        return driver.findElement(By.xpath(
+                String.format("//tbody/tr[%d]/td[%d]", row, col)
+        ));
+    }
+
+    public int getTotalClasses() {
+        return driver.findElements(tableRows).size();
+    }
+
+    // ================= ADD CLASS =================
+
+    public void addClass(String khoa, String majorName, String teacherName, String className) {
         openAddClassForm();
 
-        if (className != null && !className.isBlank()) {
-            wait.until(ExpectedConditions.visibilityOfElementLocated(classInput))
-                    .sendKeys(className);
-        }
-        if (majorName != null && !majorName.isBlank()) {
-            selectMajor(majorName);
-        }
-        if (teacherName != null && !teacherName.isBlank()) {
-            selectTeacher(teacherName);
-        }
+        openSelect("Khóa");
+        selectOption(khoa);
+
+        openSelect("Chuyên ngành");
+        selectOption(majorName);
+
+        openSelect("Giáo viên phụ trách");
+        selectOption(teacherName);
+
+        WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(classInput));
+        input.clear();
+        input.sendKeys(className);
+
+        wait.until(ExpectedConditions.elementToBeClickable(saveButton)).click();
+    }
+    public void addClassWithNoCohort(String majorName, String teacherName, String className) {
+        openAddClassForm();
+
+        openSelect("Chuyên ngành");
+        selectOption(majorName);
+
+        openSelect("Giáo viên phụ trách");
+        selectOption(teacherName);
+
+        WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(classInput));
+        input.clear();
+        input.sendKeys(className);
 
         wait.until(ExpectedConditions.elementToBeClickable(saveButton)).click();
     }
@@ -95,117 +128,225 @@ public class ClassPage extends BasePage {
         return wait.until(ExpectedConditions.visibilityOfElementLocated(errorMessage))
                 .getText().trim();
     }
+    public void addClassWithNoMajor(String khoa,String teacherName, String className) {
+        openAddClassForm();
 
-    /* ================= TABLE UTILS ================= */
+        openSelect("Khóa");
+        selectOption(khoa);
 
-    private int getColumnIndex(String columnName) {
-        for (int i = 0; i < COLUMN_NAMES.size(); i++) {
-            if (COLUMN_NAMES.get(i).equalsIgnoreCase(columnName.trim())) {
-                return i + 1;
-            }
-        }
-        throw new RuntimeException("Column not found: " + columnName);
+        openSelect("Giáo viên phụ trách");
+        selectOption(teacherName);
+
+        WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(classInput));
+        input.clear();
+        input.sendKeys(className);
+
+        wait.until(ExpectedConditions.elementToBeClickable(saveButton)).click();
+    }
+    public void addClassWithNoTeacher(String khoa, String majorName, String className) {
+        openAddClassForm();
+
+        openSelect("Khóa");
+        selectOption(khoa);
+
+        openSelect("Chuyên ngành");
+        selectOption(majorName);
+
+        WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(classInput));
+        input.clear();
+        input.sendKeys(className);
+
+        wait.until(ExpectedConditions.elementToBeClickable(saveButton)).click();
+    }
+    public void addClassWithNoClass(String khoa, String majorName, String teacherName) {
+        openAddClassForm();
+
+        openSelect("Khóa");
+        selectOption(khoa);
+
+        openSelect("Chuyên ngành");
+        selectOption(majorName);
+
+        openSelect("Giáo viên phụ trách");
+        selectOption(teacherName);
+
+        wait.until(ExpectedConditions.elementToBeClickable(saveButton)).click();
     }
 
-    private WebElement getCell(int row, int column) {
-        String xpath = String.format("//table/tbody/tr[%d]/td[%d]", row, column);
-        return driver.findElement(By.xpath(xpath));
-    }
+    // ================= SEARCH =================
 
-    public int getTotalClasses() {
-        return driver.findElements(tableRows).size();
-    }
+    // ================= SEARCH =================
 
-    public ArrayList<String> getAllClassNames() {
-        ArrayList<String> classNames = new ArrayList<>();
-        int totalRows = getTotalClasses();
+    public void searchClassName(String keyword) {
 
-        for (int i = 1; i <= totalRows; i++) {
-            classNames.add(
-                    getCell(i, getColumnIndex("TÊN LỚP")).getText().trim()
-            );
-        }
-        return classNames;
-    }
-
-    public String getRandomClassName() {
-        ArrayList<String> classNames = getAllClassNames();
-        if (classNames.isEmpty()) {
-            throw new RuntimeException("Class table is empty");
-        }
-        return classNames.get(new Random().nextInt(classNames.size()));
-    }
-
-    public ClassItem getRandomClass() {
-        ArrayList<ClassItem> classes = new ArrayList<>();
-        int totalRows = getTotalClasses();
-
-        for (int i = 1; i <= totalRows; i++) {
-            classes.add(
-                    new ClassItem(
-                            getCell(i, getColumnIndex("TÊN LỚP")).getText().trim()
-                    )
-            );
-        }
-
-        if (classes.isEmpty()) {
-            throw new RuntimeException("Class table is empty");
-        }
-
-        return classes.get(new Random().nextInt(classes.size()));
-    }
-
-    /* ================= SEARCH ================= */
-
-    public void searchClassName(String className) {
-        WebElement searchBox = wait.until(
-                ExpectedConditions.visibilityOfElementLocated(searchInput)
+        WebElement input = wait.until(
+                ExpectedConditions.elementToBeClickable(searchInput)
         );
-        searchBox.clear();
-        searchBox.sendKeys(className);
+
+        input.clear();
+        input.sendKeys(keyword);
+        input.sendKeys(Keys.ENTER);
+    }
+
+    public boolean isNoDataDisplayed() {
+        List<WebElement> els = driver.findElements(noDataMessage);
+        return !els.isEmpty() && els.get(0).isDisplayed();
     }
 
     public boolean verifySearchResultContainsKeyword(String keyword) {
-        int totalRows = getTotalClasses();
 
-        for (int i = 1; i <= totalRows; i++) {
-            String className = getCell(i, getColumnIndex("TÊN LỚP"))
-                    .getText().trim();
-            if (!className.contains(keyword)) {
+        int total = getTotalClasses();
+        if (total == 0) return false;
+
+        String key = keyword.toLowerCase();
+
+        for (int i = 1; i <= total; i++) {
+
+            String name = getCell(i, getColumnIndex("TÊN LỚP"))
+                    .getText()
+                    .trim()
+                    .toLowerCase();
+
+            if (!name.contains(key)) {
                 return false;
             }
         }
+
         return true;
     }
+    // ================= DATA =================
 
-    /* ================= DELETE ================= */
+    public String getRandomClassName() {
+        wait.until(driver -> getTotalClasses() > 0);
 
-    public String randomClickIconAndDelete() {
-        List<WebElement> rows = wait.until(
-                ExpectedConditions.visibilityOfAllElementsLocatedBy(tableRows)
-        );
+        int total = getTotalClasses();
+        int row = new Random().nextInt(total) + 1;
 
-        WebElement row = rows.get(new Random().nextInt(rows.size()));
-
-        String deletedClassName = row.findElement(
-                By.xpath(".//td[" + getColumnIndex("TÊN LỚP") + "]")
-        ).getText().trim();
-
-        WebElement dropdownIcon = row.findElement(
-                By.xpath("//td//button[@data-slot='dropdown-menu-trigger']")
-        );
-
-        new Actions(driver).moveToElement(dropdownIcon).click().perform();
-        wait.until(ExpectedConditions.elementToBeClickable(deleteButton)).click();
-        wait.until(ExpectedConditions.elementToBeClickable(confirmYesButton)).click();
-
-        return deletedClassName;
+        return getCell(row, getColumnIndex("TÊN LỚP"))
+                .getText()
+                .trim();
     }
 
-    /* ================= EMPTY STATE ================= */
+    public int getQuantityByClassName(String className) {
+
+        int total = getTotalClasses();
+
+        for (int i = 1; i <= total; i++) {
+
+            String name = getCell(i, getColumnIndex("TÊN LỚP"))
+                    .getText()
+                    .trim();
+
+            if (name.equals(className)) {
+
+                String raw = getCell(i, getColumnIndex("SỐ LƯỢNG"))
+                        .getText()
+                        .replaceAll("[^0-9]", "");
+
+                return raw.isEmpty() ? 0 : Integer.parseInt(raw);
+            }
+        }
+
+        return 0;
+    }
+
+    public String getClassNameHavingQuantityEqual(int value) {
+
+        wait.until(driver -> getTotalClasses() > 0);
+
+        int total = getTotalClasses();
+
+        for (int i = 1; i <= total; i++) {
+
+            String raw = getCell(i, getColumnIndex("SỐ LƯỢNG"))
+                    .getText()
+                    .replaceAll("[^0-9]", "");
+
+            if (!raw.isEmpty() && Integer.parseInt(raw) == value) {
+
+                return getCell(i, getColumnIndex("TÊN LỚP"))
+                        .getText()
+                        .trim();
+            }
+        }
+
+        return null;
+    }
+
+    // ================= DELETE =================
+
+    public void deleteClass(String className) {
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        int total = getTotalClasses();
+
+        for (int i = 1; i <= total; i++) {
+
+            WebElement cell = getCell(i, getColumnIndex("TÊN LỚP"));
+
+            String name = cell.getText().trim();
+
+            if (name.equals(className)) {
+
+                // click action button
+                WebElement actionBtn = wait.until(
+                        ExpectedConditions.elementToBeClickable(
+                                By.xpath("//tr[" + i + "]//td[last()]//button")
+                        )
+                );
+                actionBtn.click();
+
+                // wait menu visible
+                WebElement deleteOption = wait.until(
+                        ExpectedConditions.visibilityOfElementLocated(
+                                By.xpath("//div[@role='menuitem' and contains(.,'Xóa')]")
+                        )
+                );
+                deleteOption.click();
+
+                WebElement yesBtn = wait.until(
+                        ExpectedConditions.elementToBeClickable(confirmYesButton)
+                );
+                yesBtn.click();
+
+                wait.until(ExpectedConditions.stalenessOf(cell));
+
+                return;
+            }
+        }
+    }
+
+    // ================= OTHER =================
 
     public String getNoDataMessageText() {
         return wait.until(ExpectedConditions.visibilityOfElementLocated(noDataMessage))
                 .getText().trim();
+    }
+
+    public void waitForTableLoaded() {
+        wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(tableRows));
+    }
+
+    // ================= GET ALL =================
+
+    public ArrayList<ClassItem> getAllClasses() {
+
+        wait.until(driver -> getTotalClasses() > 0);
+
+        ArrayList<ClassItem> list = new ArrayList<>();
+        int total = getTotalClasses();
+
+        for (int i = 1; i <= total; i++) {
+
+            String className = getCell(i, getColumnIndex("TÊN LỚP")).getText().trim();
+            String cohort = getCell(i, getColumnIndex("KHÓA")).getText().trim();
+            String major = getCell(i, getColumnIndex("CHUYÊN NGÀNH")).getText().trim();
+            String teacher = getCell(i, getColumnIndex("GIÁO VIÊN PHỤ TRÁCH")).getText().trim();
+
+            list.add(new ClassItem(className, cohort, major, teacher));
+        }
+
+        return list;
     }
 }

@@ -1,8 +1,7 @@
 package pages;
 
 import models.Setting.RegulationCondition;
-import models.Setting.RegulationDetail;
-import models.Setting.RegulationItem;
+import models.RegulationItem;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
@@ -12,9 +11,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class RegulationsPage extends BasePage {
 
@@ -49,7 +46,7 @@ public class RegulationsPage extends BasePage {
 
     private final By saveButton = By.xpath("//button[contains(text(),'Lưu')]");
     private final By messageLocator = By.xpath("//p[contains(@class,'text-xs text-red')]");
-    private final By searchBarLocator = By.xpath("//input[@data-slot='input']");
+    private final By searchBarLocator = By.xpath("//input[@placeholder='Nhập tên quy chế...']");
     private final By noDataMessage = By.xpath("//div[contains(@class,'flex')]/span");
     private final By tableRows = By.xpath("//tbody/tr");
 
@@ -117,25 +114,41 @@ public class RegulationsPage extends BasePage {
     public RegulationItem getRegulationByName(String name) {
 
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        wait.until(ExpectedConditions.visibilityOfElementLocated(tableRows));
 
+        List<WebElement> headers = driver.findElements(By.xpath("//table/thead/tr/th"));
+
+        Map<String, Integer> colIndex = new HashMap<>();
+
+        for (int i = 0; i < headers.size(); i++) {
+            String headerName = headers.get(i).getText().trim().toUpperCase();
+            colIndex.put(headerName, i + 1);
+        }
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(tableRows));
         List<WebElement> rows = driver.findElements(tableRows);
+
+        int nameIdx = colIndex.get("TÊN QUY CHẾ");
+        int courseIdx = colIndex.get("KHÓA ÁP DỤNG");
+        int majorIdx = colIndex.get("CHUYÊN NGÀNH ÁP DỤNG");
 
         for (WebElement row : rows) {
 
-            // 👉 FIX: td[1] = STT → bỏ
-            String rowName = row.findElement(By.xpath("./td[2]")).getText().trim();
+            String rowName = row.findElement(By.xpath("./td[" + nameIdx + "]"))
+                    .getText().trim();
 
             if (rowName.toLowerCase().contains(name.trim().toLowerCase())) {
 
-                String course = row.findElement(By.xpath("./td[3]")).getText().trim();
-                String major = row.findElement(By.xpath("./td[4]")).getText().trim();
+                String course = row.findElement(By.xpath("./td[" + courseIdx + "]"))
+                        .getText().trim();
+
+                String major = row.findElement(By.xpath("./td[" + majorIdx + "]"))
+                        .getText().trim();
 
                 return new RegulationItem(rowName, course, major);
             }
         }
 
-        throw new RuntimeException("❌ Không tìm thấy regulation: " + name);
+        throw new RuntimeException(" Không tìm thấy regulation: " + name);
     }
 
     /* ================= SEARCH ================= */
@@ -274,36 +287,15 @@ public class RegulationsPage extends BasePage {
 
     public void openEditFormByName(String regulationName) {
 
-        List<WebElement> rows = wait.until(
-                ExpectedConditions.visibilityOfAllElementsLocatedBy(tableRows)
+        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[@data-slot='dropdown-menu-trigger' and contains(@class,'items')]"))).click();
+
+        WebElement editButton = wait.until(
+                ExpectedConditions.elementToBeClickable(
+                        By.xpath("//div[.=' Sửa']")
+                )
         );
 
-        WebElement targetRow = null;
-
-        for (WebElement row : rows) {
-
-            String name = row.findElement(
-                    By.xpath(".//td[" + getColumnIndex("TÊN QUY CHẾ") + "]")
-            ).getText().trim();
-
-            if (name.equalsIgnoreCase(regulationName)) {
-                targetRow = row;
-                break;
-            }
-        }
-
-        if (targetRow == null) {
-            throw new RuntimeException("Không tìm thấy regulation: " + regulationName);
-        }
-
-        WebElement dropdownIcon = targetRow.findElement(
-                By.xpath(".//button[@data-slot='dropdown-menu-trigger']")
-        );
-
-        new Actions(driver).moveToElement(dropdownIcon).perform();
-        dropdownIcon.click();
-
-        wait.until(ExpectedConditions.elementToBeClickable(updateIcon)).click();
+        editButton.click();
     }
     public void editRegulationName(String newName) {
 
@@ -314,12 +306,17 @@ public class RegulationsPage extends BasePage {
                 ExpectedConditions.visibilityOfElementLocated(regulationName)
         );
 
+        wait.until(ExpectedConditions.elementToBeClickable(nameInput));
+
         // clear an toàn hơn clear()
         nameInput.sendKeys(Keys.CONTROL + "a");
         nameInput.sendKeys(Keys.DELETE);
 
         // nhập tên mới
         nameInput.sendKeys(newName);
+
+        // đảm bảo value đã update
+        wait.until(ExpectedConditions.attributeToBeNotEmpty(nameInput, "value"));
 
         // click save
         wait.until(ExpectedConditions.elementToBeClickable(saveButton)).click();
@@ -329,6 +326,8 @@ public class RegulationsPage extends BasePage {
         List<WebElement> rows = wait.until(
                 ExpectedConditions.visibilityOfAllElementsLocatedBy(tableRows)
         );
+
+        wait.until(driver -> rows.size() > 0);
 
         WebElement row = rows.get(new Random().nextInt(rows.size()));
 
@@ -354,8 +353,15 @@ public class RegulationsPage extends BasePage {
         return rows.isEmpty();
     }
     public void openRegulationByName(String name) {
-        WebElement row = driver.findElement(By.xpath("//button[contains(text(),'" + name + "')]"));
-        row.click();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        String xpath = "//button[contains(normalize-space(.), '" + name + "')]";
+
+        WebElement button = wait.until(
+                ExpectedConditions.elementToBeClickable(By.xpath(xpath))
+        );
+
+        button.click();
     }
     public String getValueByCondition(String conditionName) {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));

@@ -3,6 +3,7 @@ package pages;
 import com.github.javafaker.Faker;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -22,13 +23,19 @@ public class LoginPage {
     private By passwordTextBoxLocator = By.id("password");
     private By loginButtonLocator = By.xpath("//button[contains(text(),'Đăng nhập')]");
     private By messageLocator = By.xpath("//p[contains(@class,'text-sm')]");
+    By homePageElement = By.xpath("//span[contains(text(),'Cài đặt')]");
 
     public void waitForLoginForm() {
         wait.until(ExpectedConditions.visibilityOfElementLocated(usernameTextBoxLocator));
     }
 
     public String getMessage() {
-        return driver.findElement(messageLocator).getText();
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        return wait.until(
+                ExpectedConditions.visibilityOfElementLocated(messageLocator)
+        ).getText();
     }
 
     Faker faker = new Faker();
@@ -42,10 +49,21 @@ public class LoginPage {
     }
 
     public void login(String email, String password) {
+
         waitForLoginForm();
 
-        driver.findElement(usernameTextBoxLocator).sendKeys(email);
-        driver.findElement(passwordTextBoxLocator).sendKeys(password);
-        driver.findElement(loginButtonLocator).click();
+        WebElement emailInput = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(usernameTextBoxLocator)
+        );
+        emailInput.clear();
+        emailInput.sendKeys(email);
+
+        WebElement passwordInput = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(passwordTextBoxLocator)
+        );
+        passwordInput.clear();
+        passwordInput.sendKeys(password);
+
+        wait.until(ExpectedConditions.elementToBeClickable(loginButtonLocator)).click();
     }
 }

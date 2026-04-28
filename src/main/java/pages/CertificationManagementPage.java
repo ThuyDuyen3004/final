@@ -1,6 +1,6 @@
 package pages;
 
-import models.Setting.CertificationManagementItem;
+import models.CertificationManagementItem;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -17,37 +17,14 @@ public class CertificationManagementPage extends BasePage {
     }
 
     /* ================= NAVIGATION ================= */
-//
-//    public void goToSettingPage() {
-//        clickMenu("Cài đặt");
-//    }
-//
-//    public void goToCertificationManagementPage() {
-//        goToSettingPage();
-//        clickMenu("Quản lý chứng chỉ");
-//    }
+
     public void goToSettingPage() {
-
-        By settingMenu = By.xpath("//span[normalize-space()='Cài đặt']");
-
-        wait.until(ExpectedConditions.elementToBeClickable(settingMenu));
         clickMenu("Cài đặt");
-
-        // 👇 đợi page setting load (menu con xuất hiện)
-        By certificationMenu = By.xpath("//span[normalize-space()='Quản lý chứng chỉ']");
-        wait.until(ExpectedConditions.visibilityOfElementLocated(certificationMenu));
     }
+
     public void goToCertificationManagementPage() {
-
         goToSettingPage();
-
-        By certificationMenu = By.xpath("//span[normalize-space()='Quản lý chứng chỉ']");
-
-        wait.until(ExpectedConditions.elementToBeClickable(certificationMenu));
         clickMenu("Quản lý chứng chỉ");
-
-        // 👇 đợi table load
-        wait.until(ExpectedConditions.presenceOfElementLocated(tableRows));
     }
     /* ================= LOCATORS ================= */
 
@@ -157,8 +134,9 @@ public class CertificationManagementPage extends BasePage {
 
         int row = findRowByCertificationName(oldName);
 
-        By dropdownBtn = By.xpath("//tbody/tr[" + row + "]//button");
-        wait.until(ExpectedConditions.elementToBeClickable(dropdownBtn)).click();
+        wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//table//button[@data-slot='dropdown-menu-trigger']")
+        )).click();
 
         By editBtn = By.xpath("//div[normalize-space()='Sửa']");
         wait.until(ExpectedConditions.elementToBeClickable(editBtn)).click();
@@ -172,31 +150,21 @@ public class CertificationManagementPage extends BasePage {
 
     }
 
-    public void editCertificationCourse(String name, String oldCourse, String newCourse) {
+    public void editCertificationCourse(String name, String newCourse) {
 
         int row = findRowByCertificationName(name);
 
-        By dropdownBtn = By.xpath("//td[@data-slot='table-cell']/button");
-        wait.until(ExpectedConditions.elementToBeClickable(dropdownBtn)).click();
+       driver.findElement(By.xpath("//table//button[@data-slot='dropdown-menu-trigger']")).click();
 
-        By editBtn = By.xpath("//div[.=' Sửa']");
+        By editBtn = By.xpath("//div[normalize-space()='Sửa']");
         wait.until(ExpectedConditions.elementToBeClickable(editBtn)).click();
 
         wait.until(ExpectedConditions.elementToBeClickable(applyCourseDropdown)).click();
 
-        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[@role='button']"))).click();
-
-        By newCourseOption = By.xpath(String.format("//div[normalize-space()='%s']", newCourse));
+        By newCourseOption = By.xpath("//div[normalize-space()='" + newCourse + "']");
         wait.until(ExpectedConditions.elementToBeClickable(newCourseOption)).click();
 
-        wait.until(ExpectedConditions.invisibilityOfElementLocated(formContainer));
         wait.until(ExpectedConditions.elementToBeClickable(saveButton)).click();
-    }
-
-    /* ================= REFRESH ================= */
-
-    public void refreshPage() {
-        driver.navigate().refresh();
     }
 
 

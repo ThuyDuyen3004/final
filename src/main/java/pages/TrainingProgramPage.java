@@ -1,15 +1,11 @@
 package pages;
 
-import models.Setting.SubjectItem;
-import models.Setting.TrainingProgramItem;
+import models.SubjectItem;
+import models.TrainingProgramItem;
 import org.openqa.selenium.*;
-import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.awt.*;
-import java.awt.datatransfer.StringSelection;
-import java.awt.event.KeyEvent;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +53,7 @@ public class TrainingProgramPage extends BasePage{
             By.xpath("//p[@class='text-xs text-red-500']");
 
     private final By searchBarLocator =
-            By.xpath("//input[@data-slot='input']");
+            By.xpath("//input[@placeholder='Nhập tên CTĐT...']");
 
     private final By tableRows =
             By.xpath("//tbody/tr");
