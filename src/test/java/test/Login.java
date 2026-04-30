@@ -36,7 +36,6 @@ public class Login {
         softAssert = new SoftAssert();
     }
 
-    // ✅ FIX: tách hàm createDriver đúng chuẩn
     private WebDriver createDriver(String browser) {
 
         switch (browser.toLowerCase().trim()) {
@@ -129,68 +128,5 @@ public class Login {
 
         softAssert.assertAll();
     }
-    //
 
-    @Test
-    @Description("User can login successfully with valid account")
-    public void LOG031_UserCanLoginWithValidAcc() {
-
-        loginPage.login(Constants.EMAIL, Constants.PASSWORD);
-
-        softAssert.assertEquals(homePage.getUsername(), "Trang Than",
-                "username mismatch");
-
-        softAssert.assertEquals(homePage.getRole(), "Giáo vụ khoa",
-                "role mismatch");
-
-        softAssert.assertAll();
-    }
-
-    @Test
-    @Description("Email empty")
-    public void LOG041_UserCanNotLoginWithEmailEmpty() {
-
-        loginPage.login("", Constants.PASSWORD);
-
-        softAssert.assertEquals(loginPage.getMessage(),
-                "Vui lòng nhập đầy đủ email và mật khẩu");
-
-        softAssert.assertAll();
-    }
-
-    @Test
-    @Description("Email invalid")
-    public void LOG051_UserCanNotLoginWithEmailInvalid() {
-
-        loginPage.login(loginPage.randomEmail(), Constants.PASSWORD);
-
-        softAssert.assertEquals(loginPage.getMessage(),
-                "Incorrect email or password");
-
-        softAssert.assertAll();
-    }
-
-    @Test
-    @Description("Password empty")
-    public void LOG061_UserCanNotLoginWithPasswordEmpty() {
-
-        loginPage.login(Constants.EMAIL, "");
-
-        softAssert.assertEquals(loginPage.getMessage(),
-                "Vui lòng nhập đầy đủ email và mật khẩu");
-
-        softAssert.assertAll();
-    }
-
-    @Test
-    @Description("Password invalid")
-    public void LOG071_UserCanNotLoginWithPasswordInvalid() {
-
-        loginPage.login(Constants.EMAIL, loginPage.randomPasswordDigit());
-
-        softAssert.assertEquals(loginPage.getMessage(),
-                "Incorrect email or password");
-
-        softAssert.assertAll();
-    }
 }

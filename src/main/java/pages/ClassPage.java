@@ -217,16 +217,21 @@ public class ClassPage extends BasePage {
     // ================= DATA =================
 
     public String getRandomClassName() {
-        wait.until(driver -> getTotalClasses() > 0);
 
-        int total = getTotalClasses();
+        wait.until(ExpectedConditions.presenceOfElementLocated(tableRows));
+
+        int total = driver.findElements(tableRows).size();
+
+        if (total == 0) {
+            throw new RuntimeException("No class data available");
+        }
+
         int row = new Random().nextInt(total) + 1;
 
         return getCell(row, getColumnIndex("TÊN LỚP"))
                 .getText()
                 .trim();
     }
-
     public int getQuantityByClassName(String className) {
 
         int total = getTotalClasses();

@@ -147,7 +147,7 @@ public class TrainingProgram extends BaseTest {
         Thread.sleep(2000);
 
         String actualMessage = trainingProgramPage.getNoDataMessage();
-        String expectedMessage = "Chưa có chương trình đào tạo nào";
+        String expectedMessage = "Không có chương trình đào tạo nào";
 
         softAssert.assertEquals(
                 actualMessage,
@@ -173,7 +173,7 @@ public class TrainingProgram extends BaseTest {
 
         softAssert.assertEquals(
                 actualMessage,
-                "Chưa có chương trình đào tạo nào",
+                "Không có chương trình đào tạo nào",
                 "No data message is incorrect"
         );
 

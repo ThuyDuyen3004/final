@@ -2,8 +2,6 @@ package pages;
 
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,10 +20,14 @@ public class CohortPage extends BasePage {
     private final By startYear = By.xpath("//input[@placeholder='Nhập năm bắt đầu']");
     private final By endYear = By.xpath("//input[@placeholder='Nhập năm kết thúc']");
     private final By saveButton = By.xpath("//button[contains(text(),'Lưu')]");
-
-    private final By tableRows = By.xpath("//tbody/tr");
+    private final By updateButton = By.xpath("//button[contains(text(),'Cập nhật') or contains(text(),'Lưu')]");
 
     private final By searchInput = By.xpath("//input[@placeholder='Nhập mã khóa...']");
+    private final By tableRows = By.xpath("//tbody/tr");
+    private final By noDataMsg = By.xpath("//td//div[contains(text(),'Không có')]");
+
+    private final By deleteButton = By.xpath("//div[.='Xóa']");
+    private final By confirmYesButton = By.xpath("//button[normalize-space()='Có']");
 
     private static final List<String> COLUMN_NAMES = List.of(
             "STT",
@@ -36,35 +38,26 @@ public class CohortPage extends BasePage {
 
     /* ================= NAVIGATE ================= */
 
-
     public void goToCohortPage() {
+        wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//span[contains(text(),'Cài đặt')]")
+        ));
         clickMenu("Cài đặt");
         clickMenu("Quản lý khoá");
     }
 
-    /* ================= ADD COHORT ================= */
+    /* ================= ADD ================= */
 
-    public void openAddForm() {
+    public void openAddCohortForm() {
         wait.until(ExpectedConditions.elementToBeClickable(addButton)).click();
     }
 
-    private void enterCode(String code) {
-        driver.findElement(cohortCode).sendKeys(code);
-    }
-
-    private void enterStartYear(String year) {
-        driver.findElement(startYear).sendKeys(year);
-    }
-
-    private void enterEndYear(String year) {
-        driver.findElement(endYear).sendKeys(year);
-    }
-
     public void addCohort(String code, String start, String end) {
-        openAddForm();
-        enterCode(code);
-        enterStartYear(start);
-        enterEndYear(end);
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(cohortCode)).sendKeys(code);
+        driver.findElement(startYear).sendKeys(start);
+        driver.findElement(endYear).sendKeys(end);
+
         driver.findElement(saveButton).click();
     }
 
@@ -79,74 +72,267 @@ public class CohortPage extends BasePage {
         throw new RuntimeException("Column not found: " + columnName);
     }
 
-    private WebElement getCell(int row, int column) {
-        String xpath = String.format("//table/tbody/tr[%d]/td[%d]", row, column);
-        return driver.findElement(By.xpath(xpath));
+    private WebElement getCell(int row, int col) {
+        return driver.findElement(By.xpath("//table/tbody/tr[" + row + "]/td[" + col + "]"));
     }
 
     public int getTotalCohorts() {
+        wait.until(ExpectedConditions.presenceOfElementLocated(tableRows));
         return driver.findElements(tableRows).size();
     }
 
     public List<String> getAllCohortCodes() {
-        List<String> codes = new ArrayList<>();
+        List<String> list = new ArrayList<>();
         int total = getTotalCohorts();
 
         for (int i = 1; i <= total; i++) {
-            codes.add(
-                    getCell(i, getColumnIndex("KHÓA")).getText().trim()
-            );
+            list.add(getCell(i, getColumnIndex("KHÓA")).getText().trim());
         }
-        return codes;
+        return list;
     }
 
     /* ================= SEARCH ================= */
 
     public void searchCohort(String keyword) {
-        WebElement input = wait.until(
-                ExpectedConditions.elementToBeClickable(searchInput)
-        );
-
+        WebElement input = wait.until(ExpectedConditions.elementToBeClickable(searchInput));
         input.clear();
         input.sendKeys(keyword);
-        input.sendKeys(Keys.ENTER);
     }
 
-    public boolean verifySearchResult(String keyword) {
+    public void waitForCohortAppear(String code) {
+        wait.until(driver ->
+                driver.findElements(By.xpath("//td[contains(text(),'" + code + "')]")).size() > 0
+        );
+    }
+
+    public void waitForTableLoad() {
+        wait.until(ExpectedConditions.presenceOfElementLocated(tableRows));
+    }
+
+    public String getNoDataMessage() {
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(noDataMsg))
+                .getText().trim();
+    }
+
+    /* ================= EDIT ================= */
+
+    public void openEditCohortForm(String code) {
+        By actionBtn = By.xpath("//tr[td[normalize-space()='" + code + "']]//button");
+
+        wait.until(ExpectedConditions.elementToBeClickable(actionBtn)).click();
+
+        wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//div[normalize-space()='Sửa']")
+        )).click();
+    }
+
+    public void editStartYear(String newYear) {
+        WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(startYear));
+        input.clear();
+        input.sendKeys(newYear);
+        driver.findElement(updateButton).click();
+    }
+
+    public void editEndYear(String newYear) {
+        WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(endYear));
+        input.clear();
+        input.sendKeys(newYear);
+        driver.findElement(updateButton).click();
+    }
+
+    /* ================= DELETE ================= */
+
+    public void deleteCohort(String code) {
+        By actionBtn = By.xpath("//tr[td[normalize-space()='" + code + "']]//button");
+
+        wait.until(ExpectedConditions.elementToBeClickable(actionBtn)).click();
+        wait.until(ExpectedConditions.elementToBeClickable(deleteButton)).click();
+        wait.until(ExpectedConditions.elementToBeClickable(confirmYesButton)).click();
+    }
+
+    /* ================= VERIFY ================= */
+
+    public boolean verifyCohortContainsCode(String code) {
         int total = getTotalCohorts();
 
         for (int i = 1; i <= total; i++) {
-            String code = getCell(i, getColumnIndex("KHÓA"))
-                    .getText().trim();
+            String actual = getCell(i, getColumnIndex("KHÓA")).getText().trim();
 
-            if (!code.contains(keyword)) {
-                return false;
+            if (actual.equalsIgnoreCase(code.trim())) {
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
-    /* ================= RANDOM DATA ================= */
+    /* ================= DATA ================= */
 
     public String generateUniqueCohortCode() {
-
         List<String> existing = getAllCohortCodes();
-        Random random = new Random();
+        Random r = new Random();
 
-        String code;
+        for (int i = 0; i < 30; i++) {
+            String code = String.valueOf(r.nextInt(90) + 10);
+            if (!existing.contains(code)) {
+                return code;
+            }
+        }
 
-        do {
-            code = String.valueOf(random.nextInt(90) + 10);
-        } while (existing.contains(code));
-
-        return code;
+        throw new RuntimeException("Cannot generate unique cohort code");
     }
 
-    public String generateStartYear() {
-        return String.valueOf(2020 + new Random().nextInt(10));
+    /* ================= YEAR GENERATORS ================= */
+
+    public String generateStartYear(String endYear) {
+
+        if (endYear == null) {
+            throw new RuntimeException("endYear is null");
+        }
+
+        List<String> existingYears = driver.findElements(
+                        By.xpath("//table//tbody//tr//td[" + getColumnIndex("NĂM BẮT ĐẦU") + "]")
+                ).stream()
+                .map(e -> e.getText().trim())
+                .filter(s -> !s.isEmpty())
+                .toList();
+
+        int end = Integer.parseInt(endYear);
+
+        int min = 2000;
+        int max = end - 1;
+
+        if (max <= min) {
+            throw new RuntimeException("Invalid range: startYear must be < endYear");
+        }
+
+        Random r = new Random();
+
+        for (int i = 0; i < 50; i++) {
+
+            String start = String.valueOf(min + r.nextInt(max - min + 1));
+
+            if (!existingYears.contains(start)) {
+                return start;
+            }
+        }
+
+        throw new RuntimeException("Cannot generate start year");
     }
 
     public String generateEndYear(String startYear) {
-        return String.valueOf(Integer.parseInt(startYear) + 4);
+
+        if (startYear == null) {
+            throw new RuntimeException("startYear is null");
+        }
+
+        List<String> existingYears = driver.findElements(
+                        By.xpath("//table//tbody//tr//td[" + getColumnIndex("NĂM KẾT THÚC") + "]")
+                ).stream()
+                .map(e -> e.getText().trim())
+                .filter(s -> !s.isEmpty())
+                .toList();
+
+        int start = Integer.parseInt(startYear);
+
+        int min = start + 1;
+        int max = start + 10;
+
+        Random r = new Random();
+
+        for (int i = 0; i < 50; i++) {
+
+            String end = String.valueOf(min + r.nextInt(max - min + 1));
+
+            if (!existingYears.contains(end)) {
+                return end;
+            }
+        }
+
+        throw new RuntimeException("Cannot generate end year");
     }
+
+    public String getRandomCohortCode() {
+
+        wait.until(driver -> getTotalCohorts() > 0);
+
+        By locator = By.xpath("//table//tbody//tr//td[" + getColumnIndex("KHÓA") + "]");
+
+        wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+
+        List<WebElement> list = driver.findElements(locator);
+
+        return list.get(new Random().nextInt(list.size())).getText().trim();
+    }
+    public String getStartYearByCode(String code) {
+
+        By cell = By.xpath(
+                "//tr[td[normalize-space()='" + code + "']]/td[" + getColumnIndex("NĂM BẮT ĐẦU") + "]"
+        );
+
+        wait.until(ExpectedConditions.presenceOfElementLocated(cell));
+
+        return driver.findElement(cell).getText().trim();
+    }
+    public String getEndYearByCode(String code) {
+
+        By cell = By.xpath(
+                "//tr[td[normalize-space()='" + code + "']]/td[" + getColumnIndex("NĂM KẾT THÚC") + "]"
+        );
+
+        wait.until(ExpectedConditions.presenceOfElementLocated(cell));
+
+        return driver.findElement(cell).getText().trim();
+    }
+    public String getRandomExistingStartYear() {
+
+        List<WebElement> elements = driver.findElements(
+                By.xpath("//table//tbody//tr//td[" + getColumnIndex("NĂM BẮT ĐẦU") + "]")
+        );
+
+        List<String> years = elements.stream()
+                .map(e -> e.getText().trim())
+                .filter(s -> !s.isEmpty())
+                .distinct()
+                .toList();
+
+        if (years.isEmpty()) {
+            throw new RuntimeException("No data in column NĂM BẮT ĐẦU");
+        }
+
+        return years.get(new Random().nextInt(years.size()));
+    }
+    public String getRandomExistingCohortCode() {
+
+        List<WebElement> elements = driver.findElements(
+                By.xpath("//table//tbody//tr//td[" + getColumnIndex("KHÓA") + "]")
+        );
+
+        List<String> codes = elements.stream()
+                .map(e -> e.getText().trim())
+                .filter(s -> !s.isEmpty())
+                .distinct()
+                .toList();
+
+        if (codes.isEmpty()) {
+            throw new RuntimeException("No data in column KHÓA");
+        }
+
+        return codes.get(new Random().nextInt(codes.size()));
+    }
+    public void clickOutsideForm() {
+        driver.findElement(By.tagName("body")).click();
+    }
+    public boolean isToastMessageDisplayed() {
+
+        try {
+            return wait.until(
+                    ExpectedConditions.visibilityOfElementLocated(
+                            By.xpath("//p[@class='text-sm text-red-600 mb-3']")
+                    )
+            ).isDisplayed();
+        } catch (TimeoutException e) {
+            return false;
+        }
+    }
+
 }

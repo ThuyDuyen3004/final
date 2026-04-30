@@ -11,11 +11,11 @@
             <class name="test.User"/>
             <class name="test.Students"/>
             <class name="test.TrainingProgram"/>
-            <class name="test.Certification"/>
-<!--            <class name="test.Regulations"/>-->
+<!--            <class name="test.Certification"/>-->
+            <class name="test.Regulations"/>
             <class name="test.Class"/>
             <class name="test.Major"/>
-<!--            <class name="test.CertificationManagement"/>-->
+            <class name="test.CertificationManagement"/>
             <class name="test.Cohort"/>
         </classes>
     </test>

@@ -1,5 +1,6 @@
 package pages;
 
+import com.github.javafaker.Faker;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -8,6 +9,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 
 public class MajorPage extends BasePage{
@@ -35,6 +37,7 @@ public class MajorPage extends BasePage{
     private final By searchInput = By.xpath("//input[@placeholder='Nhập tên chuyên ngành...']");
     private final By deleteButton = By.xpath("//div[.='Xóa']");
     private final By confirmYesButton = By.xpath("//button[normalize-space()='Có']");
+    By noDataMsg = By.xpath("//td//div[contains(text(),'Không có chuyên ngành nào')]");
     private static final List<String> COLUMN_NAMES = List.of(
             "STT",
             "MÃ CHUYÊN NGÀNH",
@@ -56,7 +59,6 @@ public class MajorPage extends BasePage{
     }
 
     public void addMajor(String id, String name) {
-        openAddMajorForm();
         enterMajorID(id);
         enterMajorName(name);
         driver.findElement(saveButton).click();
@@ -140,14 +142,41 @@ public class MajorPage extends BasePage{
     }
     public String getRandomMajorName() {
 
+        // Wait table có ít nhất 1 dòng
         wait.until(driver -> getTotalMajors() > 0);
 
-        int total = getTotalMajors();
-        int row = new Random().nextInt(total) + 1;
+        By majorCellsLocator = By.xpath(
+                "//table//tbody//tr//td[" + getColumnIndex("TÊN CHUYÊN NGÀNH") + "]"
+        );
 
-        return getCell(row, getColumnIndex("TÊN CHUYÊN NGÀNH"))
-                .getText()
-                .trim();
+        // Wait cho tất cả cell hiển thị
+        wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(majorCellsLocator));
+
+        // Wait thêm: đảm bảo không còn loading (nếu có spinner thì thay locator lại)
+        // wait.until(ExpectedConditions.invisibilityOfElementLocated(By.className("loading")));
+
+        List<WebElement> majors = driver.findElements(majorCellsLocator);
+
+        // Wait đảm bảo list không rỗng (double check tránh flaky)
+        wait.until(driver -> majors.size() > 0);
+
+        // Random
+        WebElement randomMajor = majors.get(new Random().nextInt(majors.size()));
+
+        // Wait text không rỗng (tránh lấy phải ô chưa render xong)
+        wait.until(driver -> !randomMajor.getText().trim().isEmpty());
+
+        return randomMajor.getText().trim();
+    }
+    public void waitForSearchResult() {
+        wait.until(driver -> getTotalMajors() > 0);
+    }
+    public void waitForNoData() {
+        wait.until(driver -> getTotalMajors() == 0);
+    }
+
+    public String getNoDataMessage() {
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(noDataMsg)).getText().trim();
     }
     public void searchMajor(String keyword) {
 
@@ -191,7 +220,7 @@ public class MajorPage extends BasePage{
                     .getText()
                     .trim();
 
-            if (actualCode.equals(code)) {
+            if (actualCode.equalsIgnoreCase(code.trim())) {
                 return true;
             }
         }
@@ -215,6 +244,9 @@ public class MajorPage extends BasePage{
 
         return codes;
     }
+    public void waitForMajorAdded(String majorCode) {
+        wait.until(driver -> verifyMajorContainsCode(majorCode));
+    }
     public String generateUniqueMajorCode() {
 
         List<String> existingCodes = getAllMajorCodes();
@@ -232,27 +264,23 @@ public class MajorPage extends BasePage{
     }
     public String generateMajorName() {
 
-        List<String> names = List.of(
-                "Trí tuệ nhân tạo",
-                "Khoa học dữ liệu",
-                "An ninh mạng",
-                "Phát triển phần mềm",
-                "Hệ thống thông tin",
-                "IoT"
-        );
+        Faker faker = new Faker(new Locale("vi")); // tiếng Việt cho đẹp
 
-        return names.get(new Random().nextInt(names.size()));
+        String name = faker.educator().course() + " "
+                + faker.job().field();
+
+        // thêm timestamp để đảm bảo unique 100%
+        return name + " " + System.currentTimeMillis();
     }
-    public void openEditMajorForm(String majorCode) {
+    public void openEditMajorForm() {
 
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
 
         WebElement rowActionBtn = wait.until(
                 ExpectedConditions.elementToBeClickable(
-                        By.xpath("//tr[.//td[contains(.,'" + majorCode + "')]]//button")
+                        By.xpath("//table//button")
                 )
         );
-
         rowActionBtn.click();
 
         WebElement editBtn = wait.until(

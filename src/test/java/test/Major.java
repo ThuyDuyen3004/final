@@ -1,78 +1,94 @@
 package test;
 
 import common.BaseTest;
-import jdk.jfr.Description;
 import org.testng.annotations.Test;
 
 public class Major extends BaseTest {
+
     private String majorCode;
     private String majorName;
     private String updatedMajorCode;
     private String updatedMajorName;
-    @Test
+
+    @Test(priority = 1)
     public void MJ_01_UserCanSearchByMajorName() {
 
         majorPage.goToMajorPage();
 
-        String majorName = majorPage.getRandomMajorName();
+        String keyword = majorPage.getRandomMajorName().trim();
 
-        majorPage.searchMajor(majorName);
+        majorPage.searchMajor(keyword);
+        majorPage.waitForSearchResult();
 
         softAssert.assertTrue(
-                majorPage.verifyMajorSearchResultContainsKeyword(majorName),
+                majorPage.verifyMajorSearchResultContainsKeyword(keyword),
                 "Search result does not contain major name"
         );
 
         softAssert.assertAll();
     }
-    @Test
-    public void CLS_02_VerifySearchWithNonExistingKeywordReturnsEmpty() throws InterruptedException {
+
+    @Test(priority = 2)
+    public void MJ_02_VerifySearchWithNonExistingKeywordReturnsEmpty() {
 
         majorPage.goToMajorPage();
 
         String keyword = "zzz_not_exist_" + System.currentTimeMillis();
-        Thread.sleep(1000);
+
         majorPage.searchMajor(keyword);
+        majorPage.waitForSearchResult();
 
         softAssert.assertEquals(
-                classPage.getTotalClasses(),
-                0,
-                "Table is not empty after search"
-        );
-        softAssert.assertTrue(
-                classPage.isNoDataDisplayed(),
-                "No data message is not displayed"
+                majorPage.getNoDataMessage(),
+                "Không có chuyên ngành nào",
+                "No data message is incorrect"
         );
 
         softAssert.assertAll();
     }
-    @Test
-    public void LOG01_UserCanAddMajorSuccessfully() throws InterruptedException{
+
+    @Test(priority = 3)
+    public void MJ_03_UserCanAddMajorSuccessfully() throws InterruptedException {
 
         majorPage.goToMajorPage();
+        majorPage.openAddMajorForm();
 
         majorCode = majorPage.generateUniqueMajorCode();
         majorName = majorPage.generateMajorName();
 
         majorPage.addMajor(majorCode, majorName);
+
         Thread.sleep(1000);
+
+        majorPage.searchMajor(majorName);
+        majorPage.waitForSearchResult();
+
         softAssert.assertTrue(
                 majorPage.verifyMajorContainsCode(majorCode),
-                "Major is not displayed after adding"
+                "Major not found after adding"
         );
 
         softAssert.assertAll();
     }
-    @Test(dependsOnMethods = "LOG01_UserCanAddMajorSuccessfully")
-    public void MJ_02_UserCanEditMajorCode() throws InterruptedException{
+
+    @Test(priority = 4)
+    public void MJ_04_UserCanEditMajorCode() throws InterruptedException{
 
         majorPage.goToMajorPage();
 
+        majorPage.searchMajor(majorName);
+        majorPage.waitForSearchResult();
+
+        majorPage.openEditMajorForm();
+
         updatedMajorCode = majorPage.generateUniqueMajorCode();
 
-        majorPage.openEditMajorForm(majorCode);
         majorPage.editMajorCode(updatedMajorCode);
+
         Thread.sleep(1000);
+        majorPage.searchMajor(majorName);
+        majorPage.waitForSearchResult();
+
         softAssert.assertTrue(
                 majorPage.verifyMajorContainsCode(updatedMajorCode),
                 "Major code was not updated"
@@ -80,17 +96,23 @@ public class Major extends BaseTest {
 
         softAssert.assertAll();
     }
-    @Test(dependsOnMethods = "MJ_02_UserCanEditMajorCode")
-    public void MJ_03_UserCanEditMajorName() throws InterruptedException{
+
+    @Test(priority = 5)
+    public void MJ_05_UserCanEditMajorName() throws InterruptedException {
 
         majorPage.goToMajorPage();
 
-        updatedMajorName = "Updated_" + majorPage.generateMajorName();
+        majorPage.searchMajor(majorName);
+        majorPage.waitForSearchResult();
 
-        majorPage.openEditMajorForm(updatedMajorCode);
+        updatedMajorName = majorPage.generateMajorName();
+        Thread.sleep(1000);
+        majorPage.openEditMajorForm();
         majorPage.editMajorName(updatedMajorName);
         Thread.sleep(1000);
 
+        majorPage.searchMajor(updatedMajorName);
+        majorPage.waitForSearchResult();
 
         softAssert.assertTrue(
                 majorPage.verifyMajorNameContains(updatedMajorName),
@@ -99,22 +121,26 @@ public class Major extends BaseTest {
 
         softAssert.assertAll();
     }
-//    @Description("User can delete major successfully")
-//    @Test(dependsOnMethods = "LOG01_UserCanAddMajorSuccessfully")
-//    public void MJ_04_UserCanDeleteMajorSuccessfully() throws InterruptedException {
-//
-//        majorPage.goToMajorPage();
-//
-//        majorPage.deleteMajor(updatedMajorCode);
-//        Thread.sleep(1000);
-//        majorPage.searchMajor(updatedMajorCode);
-//
-//        softAssert.assertTrue(
-//                majorPage.isNoDataDisplayed() ||
-//                        !majorPage.verifyMajorContainsCode(majorCode),
-//                "Major is still displayed after deletion"
-//        );
-//
-//        softAssert.assertAll();
-//    }
+
+    @Test(priority = 6)
+    public void MJ_06_UserCanDeleteMajorSuccessfully() throws InterruptedException{
+
+        majorPage.goToMajorPage();
+
+        majorPage.searchMajor(updatedMajorName);
+        majorPage.waitForSearchResult();
+
+        majorPage.deleteMajor(updatedMajorCode);
+        Thread.sleep(1000);
+
+        majorPage.searchMajor(updatedMajorName);
+
+        softAssert.assertEquals(
+                majorPage.getNoDataMessage(),
+                "Không có chuyên ngành nào",
+                "No data message is incorrect"
+        );
+
+        softAssert.assertAll();
+    }
 }
