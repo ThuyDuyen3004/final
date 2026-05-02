@@ -76,6 +76,7 @@ public class Major extends BaseTest {
 
         majorPage.goToMajorPage();
 
+        Thread.sleep(2000);
         majorPage.searchMajor(majorName);
         majorPage.waitForSearchResult();
 
@@ -85,7 +86,7 @@ public class Major extends BaseTest {
 
         majorPage.editMajorCode(updatedMajorCode);
 
-        Thread.sleep(1000);
+        Thread.sleep(2000);
         majorPage.searchMajor(majorName);
         majorPage.waitForSearchResult();
 
@@ -126,12 +127,12 @@ public class Major extends BaseTest {
     public void MJ_06_UserCanDeleteMajorSuccessfully() throws InterruptedException{
 
         majorPage.goToMajorPage();
-
+        Thread.sleep(2000);
         majorPage.searchMajor(updatedMajorName);
         majorPage.waitForSearchResult();
 
         majorPage.deleteMajor(updatedMajorCode);
-        Thread.sleep(1000);
+        Thread.sleep(5000);
 
         majorPage.searchMajor(updatedMajorName);
 

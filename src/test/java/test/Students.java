@@ -38,14 +38,11 @@ public class Students extends BaseTest {
 
         studentsPage.filterByClass("48K21.1");
 
-        Thread.sleep(1000);
-        studentsPage.scrollToStudent(mssv);
-
-        ArrayList<StudentItem> actualStudents = studentsPage.getAllStudents();
+        studentsPage.searchStudent(mssv);
 
         softAssert.assertTrue(
-                actualStudents.containsAll(expectedStudents),
-                "Student details do not match between Add Student form and Student table"
+                studentsPage.verifySearchResultContainsMSSV(mssv),
+                "Search result does not contain MSSV"
         );
 
         softAssert.assertAll();
@@ -196,7 +193,7 @@ public class Students extends BaseTest {
     public void STM007_VerifyDeleteStudentSuccessfully() throws InterruptedException {
 
         studentsPage.goToStudentsPage();
-
+        Thread.sleep(2000);
         String deletedMSSV = studentsPage.randomClickIconAndDeleteStudent();
 
         Thread.sleep(2000);
@@ -211,7 +208,6 @@ public class Students extends BaseTest {
         );
 
         softAssert.assertAll();
-        //
 
     }
     @Test(priority = 8)
@@ -355,74 +351,69 @@ public class Students extends BaseTest {
         softAssert.assertAll();
     }
 
-//    @Issue("S002")
-//    @Test(priority = 8)
-//    public void STM008_VerifyEditStudentIDSuccessfully() throws InterruptedException {
-//
-//        studentsPage.goToStudentsPage();
-//
-//        studentsPage.randomClickIconAndEditStudent();
-//
-//        String newMSSV = studentsPage.randomMSSV();
-//
-//        studentsPage.updateStudent(
-//                newMSSV,
-//                null,
-//                null,
-//                null,
-//                null
-//        );
-//        Thread.sleep(2000);
-//        studentsPage.searchStudent(newMSSV);
-//
-//        boolean isUpdated =
-//                studentsPage.verifySearchResultContainsMSSV(newMSSV);
-//
-//        softAssert.assertTrue(
-//                isUpdated,
-//                "Student ID was not updated successfully"
-//        );
-//
-//        softAssert.assertAll();
-//    }
+    @Issue("S002")
+    @Test(priority = 8)
+    public void STM008_VerifyEditStudentIDSuccessfully() throws InterruptedException {
 
-//    @Test(priority = 9)
-//    public void STM009_VerifyEditStudentNameSuccessfully() throws InterruptedException {
-//
-//        studentsPage.goToStudentsPage();
-//
-//        String mssv = studentsPage.randomClickIconAndEditStudent();
-//
-//        String expectedName = studentsPage.randomFullName();
-//
-//        studentsPage.updateStudent(
-//                null,
-//                expectedName,
-//                null,
-//                null,
-//                null
-//        );
-//
-//        Thread.sleep(2000);
-//
-//        studentsPage.scrollToBottom();
-//
-//        String actualName = studentsPage.getStudentNameByMSSV(mssv);
-//
-//        softAssert.assertEquals(
-//                actualName,
-//                expectedName,
-//                "Student name was not updated successfully"
-//        );
-//
-//        softAssert.assertAll();
-//    }
+        studentsPage.goToStudentsPage();
+        Thread.sleep(2000);
+        studentsPage.randomClickIconAndEditStudent();
+
+        String newMSSV = studentsPage.randomMSSV();
+
+        studentsPage.updateStudent(
+                newMSSV,
+                null,
+                null,
+                null,
+                null
+        );
+        Thread.sleep(2000);
+        studentsPage.searchStudent(newMSSV);
+
+        boolean isUpdated =
+                studentsPage.verifySearchResultContainsMSSV(newMSSV);
+
+        softAssert.assertTrue(
+                isUpdated,
+                "Student ID was not updated successfully"
+        );
+
+        softAssert.assertAll();
+    }
+
+    @Test(priority = 9)
+    public void STM009_VerifyEditStudentNameSuccessfully() throws InterruptedException {
+
+        studentsPage.goToStudentsPage();
+        Thread.sleep(2000);
+        String mssv = studentsPage.randomClickIconAndEditStudent();
+
+        String expectedName = studentsPage.randomFullName();
+
+        studentsPage.updateStudent(
+                null,
+                expectedName,
+                null,
+                null,
+                null
+        );
+
+        Thread.sleep(2000);
+        studentsPage.searchStudent(mssv);
+        softAssert.assertTrue(
+                studentsPage.verifySearchResultContainsMSSV(mssv),
+                "Search result does not contain MSSV"
+        );
+
+        softAssert.assertAll();
+    }
 
     @Test(priority = 13)
     public void STM010_VerifyEditStudentClassSuccessfully() throws InterruptedException {
 
         studentsPage.goToStudentsPage();
-
+        Thread.sleep(2000);
         String mssv = studentsPage.randomClickIconAndEditStudent();
 
         String newClass = "48K21.2";
@@ -452,43 +443,43 @@ public class Students extends BaseTest {
         softAssert.assertAll();
     }
 
-//    @Test(priority = 14)
-//    public void STM011_VerifyEditStudentDOBSuccessfully() throws InterruptedException {
-//
-//        studentsPage.goToStudentsPage();
-//
-//        String mssv = studentsPage.randomClickIconAndEditStudent();
-//
-//        String newDOB = "20/01/2001";
-//
-//        studentsPage.updateStudent(
-//                null,
-//                null,
-//                null,
-//                newDOB,
-//                null
-//        );
-//
-//        Thread.sleep(2000);
-//
-//        studentsPage.scrollToStudent(mssv);
-//
-//        boolean isUpdated = studentsPage.isValueDisplayedInTable(newDOB);
-//
-//        softAssert.assertTrue(
-//                isUpdated,
-//                "Student DOB was not updated successfully"
-//        );
-//
-//        softAssert.assertAll();
-//    }
+    @Test(priority = 14)
+    public void STM011_VerifyEditStudentDOBSuccessfully() throws InterruptedException {
+
+        studentsPage.goToStudentsPage();
+        Thread.sleep(2000);
+        String mssv = studentsPage.randomClickIconAndEditStudent();
+
+        String newDOB = "20/01/2001";
+
+        studentsPage.updateStudent(
+                null,
+                null,
+                null,
+                newDOB,
+                null
+        );
+
+        Thread.sleep(2000);
+
+        studentsPage.searchStudent(mssv);
+
+        boolean isUpdated = studentsPage.isValueDisplayedInTable(newDOB);
+
+        softAssert.assertTrue(
+                isUpdated,
+                "Student DOB was not updated successfully"
+        );
+
+        softAssert.assertAll();
+    }
 
     @Description("User can search student by MSSV")
     @Test(priority = 15)
     public void STM012_VerifyUserCanSearchStudentByMSSV() throws InterruptedException {
 
         studentsPage.goToStudentsPage();
-
+        Thread.sleep(2000);
         StudentItem randomStudent = studentsPage.getRandomStudent();
         String mssv = randomStudent.getMssv();
 

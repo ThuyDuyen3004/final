@@ -48,6 +48,7 @@ public class RegulationsPage extends BasePage {
     private final By deleteButton = By.xpath("//div[.=' Xóa']");
     private final By updateIcon = By.xpath("//div[.=' Sửa']");
     private final By yesOption = By.xpath("//button[.='Có']");
+    private final By confirmYesButton = By.xpath("//button[normalize-space()='Có']");
 
     /* ================= ADD ================= */
 
@@ -94,6 +95,58 @@ public class RegulationsPage extends BasePage {
 
         wait.until(ExpectedConditions.elementToBeClickable(saveButton)).click();
         Thread.sleep(1500);
+    }
+    public void addRegulationWithoutCourse(String name,
+                                           String requiredCredits,
+                                           String electiveCredits,
+                                           String gpa,
+                                           String major) {
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        wait.until(ExpectedConditions.elementToBeClickable(addButtonLocator)).click();
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(regulationName)).sendKeys(name);
+        driver.findElement(minRequiredCredits).sendKeys(requiredCredits);
+        driver.findElement(minElectiveCredits).sendKeys(electiveCredits);
+        driver.findElement(minGPA).sendKeys(gpa);
+
+        wait.until(ExpectedConditions.elementToBeClickable(applyMajorDropdown)).click();
+
+        By majorOption = By.xpath(String.format("//div[.='%s']", major));
+        wait.until(ExpectedConditions.elementToBeClickable(majorOption)).click();
+
+        wait.until(ExpectedConditions.elementToBeClickable(formContainer)).click();
+
+        wait.until(ExpectedConditions.elementToBeClickable(saveButton)).click();
+    }
+    public void addRegulationWithoutMajor(String name,
+                                          String requiredCredits,
+                                          String electiveCredits,
+                                          String gpa,
+                                          String course) {
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        wait.until(ExpectedConditions.elementToBeClickable(addButtonLocator)).click();
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(regulationName)).sendKeys(name);
+        driver.findElement(minRequiredCredits).sendKeys(requiredCredits);
+        driver.findElement(minElectiveCredits).sendKeys(electiveCredits);
+        driver.findElement(minGPA).sendKeys(gpa);
+        wait.until(ExpectedConditions.elementToBeClickable(applyCourseDropdown)).click();
+
+        By courseOption = By.xpath(String.format("//div[.='%s']", course));
+        wait.until(ExpectedConditions.elementToBeClickable(courseOption)).click();
+
+        wait.until(ExpectedConditions.elementToBeClickable(formContainer)).click();
+
+        wait.until(ExpectedConditions.elementToBeClickable(saveButton)).click();
+    }
+    public String getErrorMsg() {
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//p[contains(@class,'text-red-500') and contains(@class,'text-xs')]")
+        )).getText().trim();
     }
 
     /* ================= GET ONE ================= */
@@ -357,8 +410,49 @@ public class RegulationsPage extends BasePage {
     public String generateNonExistingKeyword() {
         return "AUTO_NOT_EXIST_" + System.currentTimeMillis();
     }
-
+    public String getMsg() {
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//div[contains(@class,'text-gray-500') and contains(@class,'text-sm')]")
+        )).getText().trim();
+    }
     public boolean isRegulationTableEmpty() {
         return driver.findElements(tableRows).isEmpty();
     }
+    public void deleteRegulation(String regulationName) {
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        By rowLocator = By.xpath("//tr[td[contains(.,'" + regulationName + "')]]");
+
+        WebElement row = wait.until(
+                ExpectedConditions.presenceOfElementLocated(rowLocator)
+        );
+
+        WebElement actionBtn = row.findElement(
+                By.xpath(".//button[@data-slot='dropdown-menu-trigger']")
+        );
+
+        wait.until(ExpectedConditions.elementToBeClickable(actionBtn)).click();
+
+        WebElement deleteBtn = wait.until(
+                ExpectedConditions.elementToBeClickable(deleteButton)
+        );
+        deleteBtn.click();
+
+        WebElement confirmBtn = wait.until(
+                ExpectedConditions.elementToBeClickable(confirmYesButton)
+        );
+        confirmBtn.click();
+    }
+    public String getRandomRegulationName() {
+
+        waitForTableLoaded();
+
+        List<WebElement> rows = driver.findElements(By.xpath("//tbody/tr"));
+
+        WebElement row = rows.get(new Random().nextInt(rows.size()));
+
+        return row.findElements(By.tagName("td")).get(0).getText();
+    }
+
 }

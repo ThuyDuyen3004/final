@@ -399,39 +399,51 @@ public class TrainingProgramPage extends BasePage{
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
 
             WebElement error = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                    By.xpath("//*[contains(text(),'tồn tại trong chương trình đào tạo')]")
+                    By.xpath("//p[@class='text-xs text-red-500']")
             ));
 
             String actual = error.getText().replaceAll("\\s+", " ").trim();
 
             return actual.contains(expectedMessage);
     }
+
     public ArrayList<String> getAllSubjectCodes() {
 
         ArrayList<String> subjectCodes = new ArrayList<>();
+
+        int columnIndex = getSubjectColumnIndex("MÃ HỌC PHẦN");
 
         List<WebElement> rows = driver.findElements(By.xpath("//tbody/tr"));
 
         for (WebElement row : rows) {
 
-            String subjectCode = row.findElement(By.xpath("./td[2]"))
-                    .getText()
-                    .trim();
+            List<WebElement> cells = row.findElements(By.tagName("td"));
 
-            subjectCodes.add(subjectCode);
+            // ❌ bỏ row không hợp lệ
+            if (cells.size() < columnIndex) {
+                continue;
+            }
+
+            String subjectCode = cells.get(columnIndex - 1).getText().trim();
+
+            if (!subjectCode.isEmpty()) {
+                subjectCodes.add(subjectCode);
+            }
         }
 
         return subjectCodes;
     }
+    private final Random random = new Random();
+
     public String getRandomSubjectCode() {
 
         ArrayList<String> subjectCodes = getAllSubjectCodes();
 
         if (subjectCodes.isEmpty()) {
-            throw new RuntimeException("Subject table is empty");
+            throw new RuntimeException("Subject table is empty or no valid subject codes found");
         }
 
-        return subjectCodes.get(new Random().nextInt(subjectCodes.size()));
+        return subjectCodes.get(random.nextInt(subjectCodes.size()));
     }
     public String getImportErrorMessage() {
         return driver.findElement(importErrorMessage).getText();
